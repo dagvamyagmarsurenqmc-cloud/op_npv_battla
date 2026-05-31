@@ -274,7 +274,7 @@
         const ROWS = 16;
         const COLS = 28;
         const DISCOUNT_RATE = 0.08;
-        const BLOCKS_PER_YEAR = 24; // ШИНЭЧЛЭЛТ 1: Жилийн олборлолтыг 24 блок болгов
+        const BLOCKS_PER_YEAR = 24;
 
         let client;
         let roomCode = "";
@@ -290,21 +290,30 @@
         let localState = { wallet: 0, currentYear: 0, yearMinedCount: 0, totalMinedCount: 0, isFinalized: false, grid: [] };
         let remoteState = { wallet: 0, currentYear: 0, yearMinedCount: 0, totalMinedCount: 0, isFinalized: false, grid: [] };
 
-        // ЗАСВАР: GitHub Pages https орчинд 100% ажиллах WSS (Secure port 443) тохиргоо
+        // Матрицын анхны бүтцийг найдвартай бэлдэх
+        for (let r = 0; r < ROWS; r++) {
+            localState.grid[r] = [];
+            remoteState.grid[r] = [];
+            for (let c = 0; c < COLS; c++) {
+                localState.grid[r][c] = { type: 'W', baseValue: -25, currentValue: -25, mined: false };
+                remoteState.grid[r][c] = { type: 'W', baseValue: -25, currentValue: -25, mined: false };
+            }
+        }
+
         function initNetwork() {
             myPlayerId = "client_" + Math.random().toString(16).substr(2, 8);
             
-            // HiveMQ SSL/TLS дэмждэг найдвартай аюулгүй порт
+            // ЗАСВАР: GitHub Pages HTTPS шаардлагад 100% нийцэх найдвартай WSS порт руу шилжүүлэв
             const brokerHost = "broker.hivemq.com";
-            const brokerPort = 443; 
+            const brokerPort = 8884; // Илүү тогтвортой Secure WebSocket порт
             const brokerPath = "/mqtt";
 
             client = new Paho.MQTT.Client(brokerHost, brokerPort, brokerPath, myPlayerId);
 
             client.onConnectionLost = (responseObject) => {
-                console.log("Disconnected code:", responseObject.errorCode);
-                document.getElementById("connection-status").innerText = "Холболт тасарлаа. Дахин ачаална уу.";
+                document.getElementById("connection-status").innerText = "Холболт тасарлаа. Дахин холбогдож байна...";
                 document.getElementById("connection-status").style.color = "#ef5350";
+                setTimeout(initNetwork, 3000); // Тасарвал 3 секундын дараа автоматаар дахин холбогдоно
             };
 
             client.onMessageArrived = (message) => {
@@ -316,34 +325,71 @@
                     document.getElementById("connection-status").innerText = "Серверт амжилттай холбогдлоо! Өрөөгөө сонгоно уу.";
                     document.getElementById("connection-status").style.color = "#4caf50";
                     document.getElementById("lobby-controls").style.display = "block";
+                    
+                    // Хэрэв өрөөнд аль хэдийн орчихсон байгаад холболт тасарсан байсан бол автомат дахин оролт хийнэ
+                    if (roomCode) {
+                        subscribeToRoom();
+                    }
                 },
                 onFailure: (err) => {
-                    console.error("MQTT Error:", err);
+                    console.log("Үндсэн сервер олдсонгүй, нөөц суваг руу шилжиж байна...", err);
                     tryAlternateSecureConnection();
                 },
-                useSSL: true, // HTTPS хуудсанд заавал ТRUE байна
-                timeout: 5,
+                useSSL: true,
+                timeout: 7,
                 cleanSession: true,
                 keepAliveInterval: 30
             });
         }
 
         function tryAlternateSecureConnection() {
-            document.getElementById("connection-status").innerText = "Нөөц суваг руу шилжиж байна...";
+            document.getElementById("connection-status").innerText = "Нөөц сервер рүү холбогдож байна...";
+            
+            // ЗАСВАР: EMQX брокерийн WebSocket замыг зөв тохируулав
             client = new Paho.MQTT.Client("broker.emqx.io", 443, "/mqtt", myPlayerId);
+            
+            client.onConnectionLost = (responseObject) => {
+                setTimeout(initNetwork, 4000);
+            };
+            
             client.onMessageArrived = (message) => handleNetworkMessage(JSON.parse(message.payloadString));
+            
             client.connect({
                 onSuccess: () => {
                     document.getElementById("connection-status").innerText = "Нөөц серверт холбогдлоо!";
                     document.getElementById("connection-status").style.color = "#4caf50";
                     document.getElementById("lobby-controls").style.display = "block";
+                    if (roomCode) subscribeToRoom();
                 },
                 onFailure: (err) => {
-                    document.getElementById("connection-status").innerText = "Сүлжээний алдаа: Серверүүд хаалттай байна.";
+                    // ЗАСВАР: 3 дахь найдвартай нөөц суваг (Eclipse Mosquitto) руу шилжинэ
+                    tryThirdSecureConnection();
+                },
+                useSSL: true,
+                timeout: 7
+            });
+        }
+
+        function tryThirdSecureConnection() {
+            document.getElementById("connection-status").innerText = "Нөөц суваг-3 руу холбогдож байна...";
+            client = new Paho.MQTT.Client("test.mosquitto.org", 8081, "/mqtt", myPlayerId);
+            
+            client.onConnectionLost = (resp) => setTimeout(initNetwork, 5000);
+            client.onMessageArrived = (msg) => handleNetworkMessage(JSON.parse(msg.payloadString));
+            
+            client.connect({
+                onSuccess: () => {
+                    document.getElementById("connection-status").innerText = "Нөөц суваг-3-т холбогдлоо!";
+                    document.getElementById("connection-status").style.color = "#4caf50";
+                    document.getElementById("lobby-controls").style.display = "block";
+                    if (roomCode) subscribeToRoom();
+                },
+                onFailure: (err) => {
+                    document.getElementById("connection-status").innerText = "Сүлжээ ачаалалтай байна. Хуудсыг дахин сэргээнэ үү.";
                     document.getElementById("connection-status").style.color = "#ef5350";
                 },
                 useSSL: true,
-                timeout: 5
+                timeout: 7
             });
         }
 
@@ -383,6 +429,7 @@
         }
 
         function sendNetworkPayload(payload) {
+            if (!client || !client.isConnected()) return;
             let message = new Paho.MQTT.Message(JSON.stringify(payload));
             message.destinationName = "pit_arena_v4/" + roomCode;
             client.send(message);
@@ -396,12 +443,12 @@
                     if (isHost && !opponentConnected) {
                         opponentConnected = true;
                         document.getElementById("room-display").innerText = "Өрсөлдөгч холбогдлоо! Тэмцээн эхэлж байна.";
+                        setupMatchEnvironments();
                         sendNetworkPayload({
                             type: "START_GRID",
                             blueprint: baseDepositBlueprint,
                             sender: myPlayerId
                         });
-                        setupMatchEnvironments();
                     }
                     break;
 
@@ -417,22 +464,24 @@
                 case "MINE":
                     if(!matchActive) return;
                     let block = remoteState.grid[data.r][data.c];
-                    block.mined = true;
-                    remoteState.wallet = data.wallet;
-                    remoteState.currentYear = data.year;
-                    remoteState.yearMinedCount = data.yearCount;
-                    
-                    if (data.yearCount === 0 && data.year > 0) {
-                        let calculatedDF = 1 / Math.pow(1 + DISCOUNT_RATE, data.year);
-                        for (let row = 0; row < ROWS; row++) {
-                            for (let col = 0; col < COLS; col++) {
-                                if (!remoteState.grid[row][col].mined && remoteState.grid[row][col].type !== 'W') {
-                                    remoteState.grid[row][col].currentValue = remoteState.grid[row][col].baseValue * calculatedDF;
+                    if(block) {
+                        block.mined = true;
+                        remoteState.wallet = data.wallet;
+                        remoteState.currentYear = data.year;
+                        remoteState.yearMinedCount = data.yearCount;
+                        
+                        if (data.yearCount === 0 && data.year > 0) {
+                            let calculatedDF = 1 / Math.pow(1 + DISCOUNT_RATE, data.year);
+                            for (let row = 0; row < ROWS; row++) {
+                                for (let col = 0; col < COLS; col++) {
+                                    if (!remoteState.grid[row][col].mined && remoteState.grid[row][col].type !== 'W') {
+                                        remoteState.grid[row][col].currentValue = remoteState.grid[row][col].baseValue * calculatedDF;
+                                    }
                                 }
                             }
                         }
+                        updateRemoteUI();
                     }
-                    updateRemoteUI();
                     break;
 
                 case "FINALIZE":
@@ -443,7 +492,6 @@
                     break;
 
                 case "RESTART_GAME":
-                    // ШИНЭЧЛЭЛТ 2: Сүлжээнээс Дахин эхлүүлэх дохио аваад тоглоомыг цэвэрлэх
                     baseDepositBlueprint = data.blueprint;
                     resetMatchStateToNew();
                     break;
@@ -518,7 +566,7 @@
                 }
             }
 
-            calculateGlobalOptimalNPV();
+            calculateGlobalOptimalNPV(); 
             renderGrid(1); 
             renderGrid(2); 
             matchActive = true;
@@ -564,9 +612,11 @@
                     if (dc >= 0 && dc < COLS && !localState.grid[r - 1][dc].mined) {
                         structuralBlocker = true;
                         const blockUi = document.getElementById(`l-b-${r-1}-${dc}`);
-                        blockUi.style.transform = "scale(1.2)";
-                        blockUi.style.borderColor = "#ef5350";
-                        setTimeout(() => { blockUi.style.transform = "scale(1)"; blockUi.style.borderColor = ""; }, 250);
+                        if(blockUi) {
+                            blockUi.style.transform = "scale(1.2)";
+                            blockUi.style.borderColor = "#ef5350";
+                            setTimeout(() => { blockUi.style.transform = "scale(1)"; blockUi.style.borderColor = ""; }, 250);
+                        }
                     }
                 }
                 if (structuralBlocker) {
@@ -612,7 +662,7 @@
             if(localState.wallet < 0) wEl.classList.add('negative'); else wEl.classList.remove('negative');
 
             document.getElementById("local-clock").innerText = `Жил ${localState.currentYear}`;
-            document.getElementById("local-throughput").innerText = `${localState.yearMinedCount} / ${BLOCKS_PER_YEAR} блок`;
+            document.getElementById("local-throughput").innerText = `${localState.yearMinedCount} / ${BLOCKS_PER_YEAR} block`;
             document.getElementById("local-discount").innerText = (1 / Math.pow(1 + DISCOUNT_RATE, localState.currentYear)).toFixed(3);
             renderGrid(1);
         }
@@ -623,7 +673,7 @@
             if(remoteState.wallet < 0) wEl.classList.add('negative'); else wEl.classList.remove('negative');
 
             document.getElementById("remote-clock").innerText = `Жил ${remoteState.currentYear}`;
-            document.getElementById("remote-throughput").innerText = `${remoteState.yearMinedCount} / ${BLOCKS_PER_YEAR} блок`;
+            document.getElementById("remote-throughput").innerText = `${remoteState.yearMinedCount} / ${BLOCKS_PER_YEAR} block`;
             document.getElementById("remote-discount").innerText = (1 / Math.pow(1 + DISCOUNT_RATE, remoteState.currentYear)).toFixed(3);
             renderGrid(2);
         }
@@ -685,7 +735,6 @@
                     rSide.classList.add('active-winner');
                 }
 
-                // ШИНЭЧЛЭЛТ 2: Тоглоом дуусахад зөвхөн Өрөө үүсгэгч (Host)-д дахин эхлүүлэх товчийг харуулах
                 if (isHost) {
                     document.getElementById("host-restart-btn").style.display = "inline-block";
                 } else {
@@ -694,10 +743,9 @@
             }
         }
 
-        // ШИНЭ ФУНКЦ: Host дахин тоглуулах товч дарах үед ажиллана
         function triggerHostRestart() {
             if (!isHost) return;
-            baseDepositBlueprint = generateDepositBlueprint(); // Шинэ санамсаргүй орд үүсгэх
+            baseDepositBlueprint = generateDepositBlueprint();
             sendNetworkPayload({
                 type: "RESTART_GAME",
                 blueprint: baseDepositBlueprint,
@@ -706,7 +754,6 @@
             resetMatchStateToNew();
         }
 
-        // ШИНЭ ФУНКЦ: Тоглоомын талбарыг бүрэн цэвэрлэж, шинэ орд дээр тоглоомыг шинээр эхлүүлэх
         function resetMatchStateToNew() {
             localState = { wallet: 0, currentYear: 0, yearMinedCount: 0, totalMinedCount: 0, isFinalized: false, grid: [] };
             remoteState = { wallet: 0, currentYear: 0, yearMinedCount: 0, totalMinedCount: 0, isFinalized: false, grid: [] };
