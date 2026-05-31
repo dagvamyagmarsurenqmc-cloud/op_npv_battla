@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pit Design Arena: Online 1v1 Battle (24 Blocks/Yr)</title>
+    <title>Pit Design Arena: Online 1v1 Battle</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js" type="text/javascript"></script>
     <style>
         body {
@@ -32,107 +32,115 @@
         #lobby-panel {
             background-color: #1c1c28;
             border: 2px solid #3d3d5c;
+            border-radius: 8px;
             padding: 20px;
-            border-radius: 12px;
+            margin-bottom: 15px;
             text-align: center;
-            margin-top: 50px;
-            max-width: 400px;
-            width: 100%;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: 95%;
+            max-width: 500px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
 
         .input-group {
             margin: 15px 0;
-        }
-
-        input {
-            padding: 10px;
-            font-size: 1.1em;
-            border-radius: 6px;
-            border: 1px solid #5c6bc0;
-            background-color: #111116;
-            color: white;
-            text-align: center;
-            width: 80%;
-        }
-
-        button {
-            color: white;
-            border: none;
-            padding: 10px 24px;
-            font-size: 1em;
-            font-weight: bold;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            margin: 5px;
-        }
-
-        .btn-blue { background-color: #1e88e5; }
-        .btn-blue:hover { background-color: #1565c0; }
-        .btn-green { background-color: #4caf50; }
-        .btn-green:hover { background-color: #388e3c; }
-        .btn-purple { background-color: #7e57c2; }
-        .btn-purple:hover { background-color: #5e35b1; }
-
-        #game-layout {
-            display: none;
-            width: 100%;
-            max-width: 1400px;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        #battlefield {
             display: flex;
-            gap: 20px;
             justify-content: center;
-            width: 100%;
-            margin-top: 15px;
+            gap: 10px;
             flex-wrap: wrap;
         }
 
-        .arena-pane {
-            background-color: #161622;
-            padding: 12px;
-            border-radius: 10px;
-            border: 2px solid #2d2d3f;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
-        }
-
-        .arena-pane.my-pane { border-color: #4caf50; }
-        .arena-pane.op-pane { border-color: #ef5350; opacity: 0.85; }
-
-        .pane-title {
-            font-size: 1.1em;
-            font-weight: bold;
-            margin-bottom: 8px;
+        input {
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #555;
+            background-color: #111;
+            color: #fff;
+            font-size: 1em;
             text-align: center;
-            letter-spacing: 1px;
         }
-        .my-pane .pane-title { color: #81c784; }
-        .op-pane .pane-title { color: #e57373; }
 
-        .dash-row {
+        #battleground {
             display: flex;
             gap: 15px;
-            background-color: #222230;
-            padding: 8px 15px;
-            border-radius: 6px;
-            font-size: 0.95em;
-            margin-bottom: 10px;
-            border: 1px solid #32324d;
+            width: 100%;
+            max-width: 100vw;
             justify-content: center;
+            flex-wrap: wrap;
         }
 
-        .stat span { font-weight: bold; color: #ffca28; }
+        .player-side {
+            background-color: #161622;
+            padding: 12px;
+            border-radius: 12px;
+            border: 2px solid #2d2d3f;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 320px;
+            max-width: 100%;
+            flex: 1;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-sizing: border-box;
+        }
+
+        .grid-container {
+            background-color: #0b0b10;
+            padding: 8px;
+            border-radius: 8px;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
+            overflow-x: auto;
+            width: 100%; 
+            box-sizing: border-box;
+            display: block; 
+        }
 
         .grid {
             display: grid;
-            grid-template-columns: repeat(20, 26px);
-            grid-template-rows: repeat(12, 26px);
+            grid-template-columns: repeat(28, 26px);
+            grid-template-rows: repeat(16, 24px);
             gap: 2px;
+            width: max-content;
+            margin: 0 auto;
+        }
+
+        .player-side.active-winner { border-color: #4caf50; box-shadow: 0 0 20px rgba(76,175,80,0.3); }
+        .player-side.active-loser { border-color: #ef5350; }
+
+        .player-header {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .local-player-color { color: #42a5f5 !important; }
+        .remote-player-color { color: #ec407a !important; }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            background-color: #20202f;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #32324d;
+            font-size: 0.85em;
+        }
+
+        .stat span { font-weight: bold; color: #ffca28; }
+        .stat .wallet-val { color: #4caf50; }
+        .stat .wallet-val.negative { color: #ef5350; }
+
+        .message-box {
+            height: 22px;
+            font-weight: bold;
+            color: #ef5350;
+            margin-bottom: 8px;
+            text-align: center;
+            font-size: 0.9em;
         }
 
         .block {
@@ -144,539 +152,602 @@
             font-weight: bold;
             border-radius: 2px;
             cursor: pointer;
-            user-select: none;
+            transition: all 0.15s ease;
             position: relative;
         }
 
-        .waste { background: linear-gradient(135deg, #7c584c, #4e342e); color: #ffccbc; border: 1px solid #3e2723; }
-        .ore-lg { background: linear-gradient(135deg, #9575cd, #5e35b1); color: #fff; border: 1px solid #4527a0; }
-        .ore-hg { background: linear-gradient(135deg, #ffb300, #ff6f00); color: #fff; border: 1px solid #e65100; }
+        .waste { background: linear-gradient(135deg, #7c5d53, #4e342e); color: #ffeb3b; opacity: 0.45; border: 1px solid #3e2723; }
+        .waste:hover { opacity: 0.85; background: #5d4037; }
+        .ore-lg { background: linear-gradient(135deg, #9575cd, #5e35b1); color: #ffffff; border: 1px solid #4527a0; }
+        .ore-lg:hover { background: linear-gradient(135deg, #b39ddb, #6f42c1); }
+        .ore-hg { background: linear-gradient(135deg, #ffb300, #ff6f00); color: #ffffff; border: 1px solid #e65100; box-shadow: 0 0 4px rgba(255,143,0,0.4); }
+        .ore-hg:hover { background: linear-gradient(135deg, #ffca28, #ff8f00); }
 
         .mined {
-            background: #0f0f14 !important;
-            border: 1px dashed #252535 !important;
+            background: #09090d !important;
+            color: #333344 !important;
+            border: 1px dashed #1a1a26 !important;
             cursor: default;
+            box-shadow: none !important;
+            opacity: 1 !important;
         }
-        .mined * { display: none !important; }
-        .mined::after { content: "⛏️"; font-size: 1.2em; opacity: 0.15; }
+        .mined .val, .mined .type { display: none; }
+        .mined::after { content: "⛏️"; font-size: 1em; opacity: 0.15; }
 
-        .should-have-mined { box-shadow: inset 0 0 0 2px #4caf50 !important; }
-        .incorrectly-mined { box-shadow: inset 0 0 0 2px #ef5350 !important; }
+        .should-have-mined { box-shadow: inset 0 0 0 3px #4caf50 !important; }
+        .incorrectly-mined { box-shadow: inset 0 0 0 3px #ef5350 !important; }
 
-        #broadcast-msg {
-            height: 30px;
+        .block .type { font-size: 0.75em; opacity: 0.85; }
+        .block .val { font-size: 0.75em; }
+
+        button {
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 0.9em;
             font-weight: bold;
-            color: #ffb74d;
-            font-size: 1.1em;
-            margin: 5px 0;
-            text-align: center;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+            margin: 2px;
         }
 
-        .action-bar { margin-top: 15px; display: flex; gap: 15px; justify-content: center; width: 100%; }
+        .btn-action { background-color: #5c6bc0; }
+        .btn-action:hover { background-color: #3f51b5; }
+        .btn-finalize { background-color: #4caf50; }
+        .btn-finalize:hover { background-color: #388e3c; }
+        .btn-restart { background-color: #2196f3; }
+        .btn-restart:hover { background-color: #0b7dda; }
+        button:disabled { background-color: #444455 !important; opacity: 0.4 !important; cursor: not-allowed; }
 
-        .instructions {
+        footer {
             margin-top: 15px;
-            background-color: #1c1c28;
-            padding: 12px 20px;
-            border-radius: 8px;
-            max-width: 1100px;
-            font-size: 0.85em;
-            line-height: 1.4;
-            border-left: 5px solid #ffca28;
+            font-size: 0.8em;
+            color: #555570;
+            text-align: center;
+            border-top: 1px solid #222233;
+            padding-top: 10px;
+            width: 100%;
         }
     </style>
 </head>
 <body>
 
-    <h1>Pit Design Arena: Online 1v1 Battle</h1>
+    <h1>Pit Design Arena: Online 1v1 Battle Engine</h1>
 
     <div id="lobby-panel">
-        <h3 style="margin-top:0; color:#ffca28;">ОНЛАЙН ТЭМЦЭЭН</h3>
-        <p id="lobby-status" style="color:#aaa; font-size:0.95em;">Серверт холбогдож байна...</p>
-        
+        <div id="connection-status" style="color: #ffca28; font-weight: bold; margin-bottom: 10px;">Серверт холбогдож байна...</div>
         <div id="lobby-controls" style="display:none;">
             <div class="input-group">
-                <button class="btn-blue" style="width:85%; padding:12px;" onclick="startAsHost()">Шинэ өрөө үүсгэх (Host)</button>
-            </div>
-            <div style="color:#777; margin:10px 0;">— ЭСВЭЛ —</div>
-            <div class="input-group">
+                <button class="btn-action" onclick="createRoom()">Шинэ өрөө үүсгэх (Host)</button>
+                <span style="align-self: center;">эсвэл</span>
                 <input type="text" id="room-input" placeholder="Өрөөний код оруулна уу">
+                <button class="btn-action" onclick="joinRoom()">Холбогдох</button>
             </div>
-            <button class="btn-purple" style="width:85%; padding:12px;" onclick="joinAsGuest()">Өрөөнд холбогдох</button>
+        </div>
+        <div id="room-display" style="display:none; font-size: 1.1em; font-weight: bold; color: #4caf50;"></div>
+    </div>
+
+    <div id="battleground" style="display: none;">
+        <div class="player-side" id="local-side">
+            <div class="player-header local-player-color" id="local-title">Таны тал</div>
+            <div class="dashboard">
+                <div class="stat">Одоогийн NPV: <span id="local-wallet" class="wallet-val">$0k</span></div>
+                <div class="stat">Хугацаа: <span id="local-clock">Жил 0</span></div>
+                <div class="stat">Хүчин чадал: <span id="local-throughput">0 / 24 блок</span></div>
+                <div class="stat">Дискаунт Коэф: <span id="local-discount">1.000</span></div>
+            </div>
+            <div class="message-box" id="local-msg"></div>
+            <div class="grid-container">
+                <div class="grid" id="local-grid"></div>
+            </div>
+            <div style="margin-top: 10px; display: flex; gap: 10px;">
+                <button class="btn-finalize" id="local-finalize-btn" onclick="finalizeLocalPit()">Олборлолтыг дуусгах 📐</button>
+                <button class="btn-restart" id="host-restart-btn" onclick="triggerHostRestart()" style="display: none;">Шинэ Тэмцээн Эхлүүлэх 🔄</button>
+            </div>
+        </div>
+
+        <div class="player-side" id="remote-side">
+            <div class="player-header remote-player-color" id="remote-title">ӨРСӨЛДӨГЧ</div>
+            <div class="dashboard">
+                <div class="stat">Одоогийн NPV: <span id="remote-wallet" class="wallet-val">$0k</span></div>
+                <div class="stat">Хугацаа: <span id="remote-clock">Жил 0</span></div>
+                <div class="stat">Хүчин чадал: <span id="remote-throughput">0 / 24 блок</span></div>
+                <div class="stat">Дискаунт Коэф: <span id="remote-discount">1.000</span></div>
+            </div>
+            <div class="message-box" id="remote-msg"></div>
+            <div class="grid-container">
+                <div class="grid" id="remote-grid"></div>
+            </div>
+            <div style="margin-top: 10px; font-size: 0.85em; color:#888;">
+                (Өрсөлдөгчийн уурхайг бодит цаг хугацаанд харж байна)
+            </div>
         </div>
     </div>
 
-    <div id="game-layout">
-        <div id="broadcast-msg">Өрсөлдөгчийг хүлээж байна...</div>
-
-        <div id="battlefield">
-            <div class="arena-pane my-pane">
-                <div class="pane-title" id="my-title">ТАНЫ УУРХАЙ (Тоглогч)</div>
-                <div class="dash-row">
-                    <div class="stat">NPV: <span id="my-wallet">$0k</span></div>
-                    <div class="stat">Хугацаа: <span id="my-clock">Жил 0</span></div>
-                    <div class="stat">Хүчин чадал: <span id="my-throughput">0 / 24</span></div>
-                    <div class="stat">Дискаунт: <span id="my-df">1.000</span></div>
-                </div>
-                <div class="grid" id="my-grid"></div>
-            </div>
-
-            <div class="arena-pane op-pane">
-                <div class="pane-title" id="op-title">ӨРСӨЛДӨГЧИЙН УУРХАЙ</div>
-                <div class="dash-row">
-                    <div class="stat">NPV: <span id="op-wallet">$0k</span></div>
-                    <div class="stat">Хугацаа: <span id="op-clock">Жил 0</span></div>
-                    <div class="stat">Хүчин чадал: <span id="op-throughput">0 / 24</span></div>
-                    <div class="stat">Дискаунт: <span id="op-df">1.000</span></div>
-                </div>
-                <div class="grid" id="op-grid"></div>
-            </div>
-        </div>
-
-        <div class="action-bar">
-            <button class="btn-green" id="finalize-btn" onclick="triggerFinalize()" disabled>Уурхайг хаах 📐</button>
-            <button class="btn-blue" id="host-restart-btn" onclick="triggerHostRestart()" style="display:none;">Шинэ тоглоом эхлүүлэх 🔄</button>
-        </div>
-
-        <div class="instructions">
-            <strong>Тэмцээний дүрэм:</strong>
-            <ul>
-                <li><strong>Жилийн хүчин чадал (24 блок):</strong> Та жилд хамгийн ихдээ 24 блок ухах боломжтой. 24 блок ухах бүрд жил ахиж, олборлоогүй үлдсэн хүдрийн үнэ цэнэ 8%-иар буурна (Discounting).</li>
-                <li><strong>Уурхайг хаах:</strong> Бүх баян хүдрээ аваад дууссан бол 📐 Хаах товчийг дарж олборлолтыг зогсооно. Хоёр тоглогч хоёулаа уурхайгаа хаах эсвэл блокны лимит дуусах үед тэмцээн өндөрлөнө.</li>
-                <li><strong>Дахин тоглох:</strong> Тоглоом дууссаны дараа зөвхөн Өрөө үүсгэгч (Host) тоглоомыг шинээр эхлүүлэх эрхтэй бөгөөд дарахад хоёр тоглогч ижил шинэ ордод шууд уралдана.</li>
-            </ul>
-        </div>
-    </div>
+    <footer>
+        © ШУТИС ГУУС H.MIA350 Уурхайн төсөл зохиомж, төлөвлөлт хичээлийн семинар - Real-Time P2P Arena
+    </footer>
 
     <script>
-        const ROWS = 12;
-        const COLS = 20;
+        const ROWS = 16;
+        const COLS = 28;
         const DISCOUNT_RATE = 0.08;
-        const BLOCKS_PER_YEAR = 24; // ШИНИЙГ СУУЛГАСАН: Жилд 24 блок
+        const BLOCKS_PER_YEAR = 24; // ШИНЭЧЛЭЛТ 1: Жилийн олборлолтыг 24 блок болгов
 
-        // MQTT Сүлжээний тохиргоо
-        let mqttClient;
-        const BROKER = "broker.hivemq.com";
-        const PORT = 8000; 
-        let baseTopic = "";
-        let myRole = ""; // "host" эсвэл "guest"
-        let isConnectedToPeer = false;
+        let client;
+        let roomCode = "";
+        let isHost = false;
+        let myPlayerId = "";
+        let opponentConnected = false;
+        let matchActive = false;
 
-        // Тоглоомын дотоод төлөвүүд
-        let seedGridData = []; 
-        let targetMaxNPV = 0;
+        let baseDepositBlueprint = null;
         let theoreticalOptimalSequence = [];
+        let targetMaxNPV = 0;
 
-        // Тоглогчдын хувийн дата
-        let pMe = { wallet: 0, year: 0, minedThisYear: 0, totalMined: 0, finalized: false, grid: [] };
-        let pOp = { wallet: 0, year: 0, minedThisYear: 0, totalMined: 0, finalized: false, grid: [] };
+        let localState = { wallet: 0, currentYear: 0, yearMinedCount: 0, totalMinedCount: 0, isFinalized: false, grid: [] };
+        let remoteState = { wallet: 0, currentYear: 0, yearMinedCount: 0, totalMinedCount: 0, isFinalized: false, grid: [] };
 
-        // Идэвхтэй төлөв
-        let gameActive = false;
+        // ЗАСВАР: GitHub Pages https орчинд 100% ажиллах WSS (Secure port 443) тохиргоо
+        function initNetwork() {
+            myPlayerId = "client_" + Math.random().toString(16).substr(2, 8);
+            
+            // HiveMQ SSL/TLS дэмждэг найдвартай аюулгүй порт
+            const brokerHost = "broker.hivemq.com";
+            const brokerPort = 443; 
+            const brokerPath = "/mqtt";
 
-        // MQTT Холболт үүсгэх
-        function connectMQTT() {
-            const clientID = "pit_arena_" + Math.random().toString(16).substr(2, 8);
-            mqttClient = new Paho.MQTT.Client(BROKER, Number(PORT), clientID);
-            mqttClient.onConnectionLost = (res) => { console.log("Lost:", res); };
-            mqttClient.onMessageArrived = handleIncomingMessage;
+            client = new Paho.MQTT.Client(brokerHost, brokerPort, brokerPath, myPlayerId);
 
-            mqttClient.connect({
+            client.onConnectionLost = (responseObject) => {
+                console.log("Disconnected code:", responseObject.errorCode);
+                document.getElementById("connection-status").innerText = "Холболт тасарлаа. Дахин ачаална уу.";
+                document.getElementById("connection-status").style.color = "#ef5350";
+            };
+
+            client.onMessageArrived = (message) => {
+                handleNetworkMessage(JSON.parse(message.payloadString));
+            };
+
+            client.connect({
                 onSuccess: () => {
-                    document.getElementById('lobby-status').innerText = "Серверт холбогдлоо. Өрөө үүсгэх эсвэл код оруулж нэгдэнэ үү.";
-                    document.getElementById('lobby-controls').style.display = "block";
+                    document.getElementById("connection-status").innerText = "Серверт амжилттай холбогдлоо! Өрөөгөө сонгоно уу.";
+                    document.getElementById("connection-status").style.color = "#4caf50";
+                    document.getElementById("lobby-controls").style.display = "block";
                 },
                 onFailure: (err) => {
-                    document.getElementById('lobby-status').innerText = "Холболт амжилтгүй. Хуудсыг сэргээнэ үү.";
-                    console.log(err);
+                    console.error("MQTT Error:", err);
+                    tryAlternateSecureConnection();
                 },
-                useSSL: false
+                useSSL: true, // HTTPS хуудсанд заавал ТRUE байна
+                timeout: 5,
+                cleanSession: true,
+                keepAliveInterval: 30
             });
         }
 
-        // Host өрөө үүсгэх
-        function startAsHost() {
-            myRole = "host";
-            const roomCode = Math.floor(100000 + Math.random() * 900000).toString();
-            baseTopic = "mining/pit_arena/room/" + roomCode;
-            
-            mqttClient.subscribe(baseTopic);
-            
-            document.getElementById('lobby-panel').innerHTML = `
-                <h3 style="color:#ffca28;">ӨРӨӨ ҮҮСЛЭЭ</h3>
-                <div style="font-size:2em; font-weight:bold; margin:15px 0; color:#1e88e5; letter-spacing:3px;">${roomCode}</div>
-                <p style="color:#aaa;">Өрсөлдөгчдөө энэ кодыг өгч, холбогдохыг хүлээж байна...</p>
-                <div style="font-size:2.5em; animation: blink 1s infinite;">⏳</div>
-            `;
-            
-            generateSharedDeposit(); 
+        function tryAlternateSecureConnection() {
+            document.getElementById("connection-status").innerText = "Нөөц суваг руу шилжиж байна...";
+            client = new Paho.MQTT.Client("broker.emqx.io", 443, "/mqtt", myPlayerId);
+            client.onMessageArrived = (message) => handleNetworkMessage(JSON.parse(message.payloadString));
+            client.connect({
+                onSuccess: () => {
+                    document.getElementById("connection-status").innerText = "Нөөц серверт холбогдлоо!";
+                    document.getElementById("connection-status").style.color = "#4caf50";
+                    document.getElementById("lobby-controls").style.display = "block";
+                },
+                onFailure: (err) => {
+                    document.getElementById("connection-status").innerText = "Сүлжээний алдаа: Серверүүд хаалттай байна.";
+                    document.getElementById("connection-status").style.color = "#ef5350";
+                },
+                useSSL: true,
+                timeout: 5
+            });
         }
 
-        // Guest өрөөнд нэгдэх
-        function joinAsGuest() {
-            const code = document.getElementById('room-input').value.trim();
-            if(code.length !== 6) { alert("6 оронтой код оруулна уу!"); return; }
-            
-            myRole = "guest";
-            baseTopic = "mining/pit_arena/room/" + code;
-            
-            mqttClient.subscribe(baseTopic);
-            
-            document.getElementById('lobby-panel').innerText = "Өрөөнд холбогдож байна, түр хүлээнэ үү...";
-            
-            sendNetMessage({ type: "GUEST_JOIN" });
+        function createRoom() {
+            roomCode = Math.floor(100000 + Math.random() * 900000).toString();
+            isHost = true;
+            subscribeToRoom();
         }
 
-        // Сүлжээгээр мессеж илгээх
-        function sendNetMessage(obj) {
-            if(!mqttClient || !baseTopic) return;
-            obj.sender = myRole;
-            const msg = new Paho.MQTT.Message(JSON.stringify(obj));
-            msg.destinationName = baseTopic;
-            mqttClient.send(msg);
+        function joinRoom() {
+            let input = document.getElementById("room-input").value.trim();
+            if (input.length < 5) {
+                alert("Зөв кодоо оруулна уу.");
+                return;
+            }
+            roomCode = input;
+            isHost = false;
+            subscribeToRoom();
         }
 
-        // Сүлжээнээс ирсэн мессежийг боловсруулах
-        function handleIncomingMessage(message) {
-            const data = JSON.parse(message.payloadString);
-            if(data.sender === myRole && data.type !== "RESTART") return; // Өөрийн илгээсэн мессежийг алгасах (RESTART-аас бусад)
+        function subscribeToRoom() {
+            client.subscribe("pit_arena_v4/" + roomCode, {
+                onSuccess: () => {
+                    document.getElementById("lobby-controls").style.display = "none";
+                    const display = document.getElementById("room-display");
+                    display.style.display = "block";
+                    
+                    if (isHost) {
+                        display.innerText = `Өрөө үүслээ! Код: ${roomCode}. Өрсөлдөгчөө хүлээж байна...`;
+                        baseDepositBlueprint = generateDepositBlueprint();
+                    } else {
+                        display.innerText = `Өрөөнд холбогдлоо: ${roomCode}. Тоглоом эхэлж байна...`;
+                        sendNetworkPayload({ type: "JOIN", sender: myPlayerId });
+                    }
+                }
+            });
+        }
+
+        function sendNetworkPayload(payload) {
+            let message = new Paho.MQTT.Message(JSON.stringify(payload));
+            message.destinationName = "pit_arena_v4/" + roomCode;
+            client.send(message);
+        }
+
+        function handleNetworkMessage(data) {
+            if (data.sender === myPlayerId && data.type !== "RESTART_GAME") return;
 
             switch(data.type) {
-                case "GUEST_JOIN":
-                    if(myRole === "host") {
-                        isConnectedToPeer = true;
-                        sendNetMessage({ type: "MAP_DATA", grid: seedGridData });
-                        launchGameSession();
+                case "JOIN":
+                    if (isHost && !opponentConnected) {
+                        opponentConnected = true;
+                        document.getElementById("room-display").innerText = "Өрсөлдөгч холбогдлоо! Тэмцээн эхэлж байна.";
+                        sendNetworkPayload({
+                            type: "START_GRID",
+                            blueprint: baseDepositBlueprint,
+                            sender: myPlayerId
+                        });
+                        setupMatchEnvironments();
                     }
                     break;
-                case "MAP_DATA":
-                    if(myRole === "guest") {
-                        seedGridData = data.grid;
-                        isConnectedToPeer = true;
-                        launchGameSession();
+
+                case "START_GRID":
+                    if (!isHost) {
+                        baseDepositBlueprint = data.blueprint;
+                        opponentConnected = true;
+                        document.getElementById("room-display").innerText = "Орд газрын бүтэц татагдлаа! Тэмцээн эхэлж байна.";
+                        setupMatchEnvironments();
                     }
                     break;
-                case "MINE_ACTION":
-                    if(gameActive) {
-                        applyPeerMining(data.row, data.col);
+
+                case "MINE":
+                    if(!matchActive) return;
+                    let block = remoteState.grid[data.r][data.c];
+                    block.mined = true;
+                    remoteState.wallet = data.wallet;
+                    remoteState.currentYear = data.year;
+                    remoteState.yearMinedCount = data.yearCount;
+                    
+                    if (data.yearCount === 0 && data.year > 0) {
+                        let calculatedDF = 1 / Math.pow(1 + DISCOUNT_RATE, data.year);
+                        for (let row = 0; row < ROWS; row++) {
+                            for (let col = 0; col < COLS; col++) {
+                                if (!remoteState.grid[row][col].mined && remoteState.grid[row][col].type !== 'W') {
+                                    remoteState.grid[row][col].currentValue = remoteState.grid[row][col].baseValue * calculatedDF;
+                                }
+                            }
+                        }
                     }
+                    updateRemoteUI();
                     break;
-                case "FINALIZE_ACTION":
-                    pOp.finalized = true;
-                    document.getElementById('op-title').innerText = "ӨРСӨЛДӨГЧИЙН УУРХАЙ (ХААГДСАН 📐)";
-                    checkMatchEndCondition();
+
+                case "FINALIZE":
+                    remoteState.isFinalized = true;
+                    document.getElementById("remote-msg").innerText = "🔒 Өрсөлдөгч олборлолтыг дуусгалаа.";
+                    document.getElementById("remote-msg").style.color = "#ffca28";
+                    checkMatchConclusion();
                     break;
-                case "RESTART":
-                    // ШИНИЙГ СУУЛГАСАН: Сүлжээнээс дахин эхлүүлэх команд ирэхэд
-                    seedGridData = data.grid;
-                    resetLocalGameState();
+
+                case "RESTART_GAME":
+                    // ШИНЭЧЛЭЛТ 2: Сүлжээнээс Дахин эхлүүлэх дохио аваад тоглоомыг цэвэрлэх
+                    baseDepositBlueprint = data.blueprint;
+                    resetMatchStateToNew();
                     break;
             }
         }
 
-        // Ижил орд газрын бүтцийг санамсаргүй үүсгэх (Зөвхөн Host үүсгэж дамжуулна)
-        function generateSharedDeposit() {
-            seedGridData = [];
+        function generateDepositBlueprint() {
+            let blueprint = [];
             for (let r = 0; r < ROWS; r++) {
-                seedGridData[r] = [];
+                blueprint[r] = [];
                 for (let c = 0; c < COLS; c++) {
-                    seedGridData[r][c] = { type: 'W', baseValue: -25 };
+                    blueprint[r][c] = { type: 'W', baseValue: -25 };
                 }
             }
 
+            let targetHgCount = Math.floor(Math.random() * 6) + 35; 
             let hgCluster = [];
-            let startRow = Math.floor(Math.random() * 3) + 6; 
-            let startCol = Math.floor(Math.random() * 8) + 6; 
-            seedGridData[startRow][startCol] = { type: 'HG', baseValue: 170 };
-            hgCluster.push({r: startRow, c: startCol});
+            let startRow = Math.floor(Math.random() * 2) + 4; 
+            let startCol = Math.floor(Math.random() * 6) + 11;
+            
+            blueprint[startRow][startCol] = { type: 'HG', baseValue: 180 };
+            hgCluster.push({ r: startRow, c: startCol });
 
-            while (hgCluster.length < 16) {
+            let safety = 0;
+            while (hgCluster.length < targetHgCount && safety < 1500) {
+                safety++;
                 let baseBlock = hgCluster[Math.floor(Math.random() * hgCluster.length)];
-                let dir = [[-1, 0], [1, 0], [0, -1], [0, 1]][Math.floor(Math.random() * 4)];
-                let nR = baseBlock.r + dir[0], nC = baseBlock.c + dir[1];
-                if (nR > 2 && nR < ROWS && nC >= 0 && nC < COLS) {
-                    if (seedGridData[nR][nC].type === 'W') {
-                        seedGridData[nR][nC] = { type: 'HG', baseValue: 170 };
-                        hgCluster.push({r: nR, c: nC});
+                let directions = [[-1, 0], [1, 0], [1, 0], [0, -1], [0, 1]]; 
+                let dir = directions[Math.floor(Math.random() * directions.length)];
+                let nR = baseBlock.r + dir[0];
+                let nC = baseBlock.c + dir[1];
+
+                if (nR >= 4 && nR < (ROWS - 1) && nC >= 2 && nC < (COLS - 2)) {
+                    if (blueprint[nR][nC].type === 'W') {
+                        blueprint[nR][nC] = { type: 'HG', baseValue: 180 };
+                        hgCluster.push({ r: nR, c: nC });
                     }
                 }
             }
 
-            let lgTarget = 14, addedLg = 0;
-            while (addedLg < lgTarget) {
-                let r = Math.floor(Math.random() * 5) + 2, c = Math.floor(Math.random() * COLS);
-                if (seedGridData[r][c].type === 'W') {
-                    seedGridData[r][c] = { type: 'LG', baseValue: 55 };
-                    addedLg++;
-                }
-            }
-        }
+            let internalLgTarget = Math.floor(Math.random() * 5) + 6;
+            let internalLgCount = 0;
+            while (internalLgCount < internalLgTarget) {
+                let baseBlock = hgCluster[Math.floor(Math.random() * hgCluster.length)];
+                let dir = [[-1,0],[1,0],[0,-1],[0,1]][Math.floor(Math.random()*4)];
+                let nR = baseBlock.r + dir[0];
+                let nC = baseBlock.c + dir[1];
 
-        // Тэмцээн эхлүүлэх үндсэн тохиргоо
-        function launchGameSession() {
-            document.getElementById('lobby-panel').style.display = "none";
-            document.getElementById('game-layout').style.display = "flex";
-            
-            document.getElementById('my-title').innerText = `ТАНЫ УУРХАЙ (${myRole === 'host' ? 'Host' : 'Guest'})`;
-            document.getElementById('broadcast-msg').innerText = "⚔️ ТЭМЦЭЭН ЭХЭЛЛЭЭ! Амжилт хүсэе!";
-            document.getElementById('finalize-btn').disabled = false;
-            
-            calculateTheoreticalMaxNPV();
-            setupLocalPlayers();
-            gameActive = true;
-        }
-
-        function setupLocalPlayers() {
-            // Миний талбар
-            pMe.grid = [];
-            for(let r=0; r<ROWS; r++){
-                pMe.grid[r] = [];
-                for(let c=0; c<COLS; c++){
-                    pMe.grid[r][c] = { ...seedGridData[r][c], currentValue: seedGridData[r][c].baseValue, mined: false };
-                }
-            }
-            // Өрсөлдөгчийн талбар
-            pOp.grid = [];
-            for(let r=0; r<ROWS; r++){
-                pOp.grid[r] = [];
-                for(let c=0; c<COLS; c++){
-                    pOp.grid[r][c] = { ...seedGridData[r][c], currentValue: seedGridData[r][c].baseValue, mined: false };
+                if (nR >= 0 && nR < ROWS && nC >= 0 && nC < COLS && blueprint[nR][nC].type === 'W') {
+                    blueprint[nR][nC] = { type: 'LG', baseValue: 60 };
+                    internalLgCount++;
                 }
             }
 
-            renderGridUI('my-grid', pMe.grid, true);
-            renderGridUI('op-grid', pOp.grid, false);
+            return blueprint;
         }
 
-        function renderGridUI(htmlId, gridData, isInteractive) {
-            const container = document.getElementById(htmlId);
-            container.innerHTML = '';
+        function setupMatchEnvironments() {
+            document.getElementById("lobby-panel").style.display = "none";
+            document.getElementById("battleground").style.display = "flex";
+
+            document.getElementById("local-title").innerText = isHost ? "Тоглогч 1 (Та)" : "Тоглогч 2 (Та)";
+            document.getElementById("remote-title").innerText = isHost ? "Тоглогч 2 (Өрсөлдөгч)" : "Тоглогч 1 (Өрсөлдөгч)";
+
+            for (let r = 0; r < ROWS; r++) {
+                localState.grid[r] = [];
+                remoteState.grid[r] = [];
+                for (let c = 0; c < COLS; c++) {
+                    let src = baseDepositBlueprint[r][c];
+                    localState.grid[r][c] = { type: src.type, baseValue: src.baseValue, currentValue: src.baseValue, mined: false };
+                    remoteState.grid[r][c] = { type: src.type, baseValue: src.baseValue, currentValue: src.baseValue, mined: false };
+                }
+            }
+
+            calculateGlobalOptimalNPV();
+            renderGrid(1); 
+            renderGrid(2); 
+            matchActive = true;
+        }
+
+        function renderGrid(playerMode) {
+            const gridEl = document.getElementById(playerMode === 1 ? 'local-grid' : 'remote-grid');
+            gridEl.innerHTML = '';
+            let targetMatrix = playerMode === 1 ? localState.grid : remoteState.grid;
+
             for (let r = 0; r < ROWS; r++) {
                 for (let c = 0; c < COLS; c++) {
-                    const block = gridData[r][c];
-                    const el = document.createElement('div');
-                    el.id = `${htmlId}-${r}-${c}`;
+                    const block = targetMatrix[r][c];
+                    const blockEl = document.createElement('div');
+                    blockEl.id = playerMode === 1 ? `l-b-${r}-${c}` : `r-b-${r}-${c}`;
                     
-                    let cls = 'waste';
-                    if (block.type === 'HG') cls = 'ore-hg';
-                    if (block.type === 'LG') cls = 'ore-lg';
-                    el.className = `block ${cls}`;
-                    
-                    if (block.mined) el.classList.add('mined');
+                    let typeClass = 'waste';
+                    if (block.type === 'HG') typeClass = 'ore-hg';
+                    if (block.type === 'LG') typeClass = 'ore-lg';
 
-                    let valText = block.currentValue > 0 ? `+${Math.round(block.currentValue)}` : `${Math.round(block.currentValue)}`;
-                    el.innerHTML = `<div>${block.type}</div><div style="font-size:0.8em; opacity:0.8;">${valText}</div>`;
+                    blockEl.className = `block ${typeClass}`;
+                    if (block.mined) blockEl.classList.add('mined');
+
+                    let displayVal = block.currentValue > 0 ? `+${Math.round(block.currentValue)}` : `${Math.round(block.currentValue)}`;
+                    blockEl.innerHTML = `<div class="type">${block.type}</div><div class="val">${displayVal}</div>`;
                     
-                    if (isInteractive) {
-                        el.addEventListener('click', () => handleMineClick(r, c));
+                    if (playerMode === 1) {
+                        blockEl.addEventListener('click', () => mineLocalBlock(r, c));
                     }
-                    container.appendChild(el);
+                    gridEl.appendChild(blockEl);
                 }
             }
         }
 
-        // Блок ухах үндсэн логик
-        function handleMineClick(r, c) {
-            if (!gameActive || pMe.finalized) return;
-            let block = pMe.grid[r][c];
+        function mineLocalBlock(r, c) {
+            if (!matchActive || localState.isFinalized) return;
+            let block = localState.grid[r][c];
             if (block.mined) return;
 
-            // Налуугийн аюулгүй байдлын шалгалт
             if (r > 0) {
-                for (let p of [c - 1, c, c + 1]) {
-                    if (p >= 0 && p < COLS && !pMe.grid[r - 1][p].mined) {
-                        document.getElementById('broadcast-msg').innerText = "🛑 НАЛУУГИЙН АЛДАА: Дээд талын блокуудыг эхэлж ухна уу!";
-                        return;
+                let structuralBlocker = false;
+                for (let dc of [c - 1, c, c + 1]) {
+                    if (dc >= 0 && dc < COLS && !localState.grid[r - 1][dc].mined) {
+                        structuralBlocker = true;
+                        const blockUi = document.getElementById(`l-b-${r-1}-${dc}`);
+                        blockUi.style.transform = "scale(1.2)";
+                        blockUi.style.borderColor = "#ef5350";
+                        setTimeout(() => { blockUi.style.transform = "scale(1)"; blockUi.style.borderColor = ""; }, 250);
                     }
+                }
+                if (structuralBlocker) {
+                    document.getElementById("local-msg").innerText = "🛑 НАЛТАЙН ЗӨРЧИЛ: Дээд талын блокуудыг эхэлж авна уу!";
+                    return;
                 }
             }
 
-            document.getElementById('broadcast-msg').innerText = "⛏️ Олборлож байна...";
-
+            document.getElementById("local-msg").innerText = "";
             block.mined = true;
-            pMe.wallet += block.currentValue;
-            pMe.minedThisYear++;
-            pMe.totalMined++;
+            localState.wallet += block.currentValue;
+            localState.yearMinedCount++;
+            localState.totalMinedCount++;
 
-            // Жил ахих цикл (24 Блок дуусахад)
-            if (pMe.minedThisYear === BLOCKS_PER_YEAR) {
-                pMe.year++;
-                pMe.minedThisYear = 0;
-                let df = 1 / Math.pow(1 + DISCOUNT_RATE, pMe.year);
+            if (localState.yearMinedCount === BLOCKS_PER_YEAR) {
+                localState.currentYear++;
+                localState.yearMinedCount = 0;
+                let calculatedDF = 1 / Math.pow(1 + DISCOUNT_RATE, localState.currentYear);
                 for (let row = 0; row < ROWS; row++) {
                     for (let col = 0; col < COLS; col++) {
-                        if (!pMe.grid[row][col].mined && pMe.grid[row][col].type !== 'W') {
-                            pMe.grid[row][col].currentValue = pMe.grid[row][col].baseValue * df;
+                        if (!localState.grid[row][col].mined && localState.grid[row][col].type !== 'W') {
+                            localState.grid[row][col].currentValue = localState.grid[row][col].baseValue * calculatedDF;
                         }
                     }
                 }
             }
 
-            // Шинэчлэгдсэн датаг дэлгэцэнд зурах
-            updateDashboardUI('my', pMe);
-            renderGridUI('my-grid', pMe.grid, true);
+            sendNetworkPayload({
+                type: "MINE",
+                r: r, c: c,
+                wallet: localState.wallet,
+                year: localState.currentYear,
+                yearCount: localState.yearMinedCount,
+                sender: myPlayerId
+            });
 
-            // Өрсөлдөгч рүүгээ сүлжээгээр нүүдлээ илгээх
-            sendNetMessage({ type: "MINE_ACTION", row: r, col: c });
-
-            checkMatchEndCondition();
+            updateLocalUI();
         }
 
-        // Өрсөлдөгчийн нүүдлийг хүлээж авч өөрийн дэлгэц дээр зурах
-        function applyPeerMining(r, c) {
-            let block = pOp.grid[r][c];
-            block.mined = true;
-            pOp.wallet += block.currentValue;
-            pOp.minedThisYear++;
-            pOp.totalMined++;
+        function updateLocalUI() {
+            const wEl = document.getElementById("local-wallet");
+            wEl.innerText = localState.wallet >= 0 ? `$${Math.round(localState.wallet)}k` : `-$${Math.abs(Math.round(localState.wallet))}k`;
+            if(localState.wallet < 0) wEl.classList.add('negative'); else wEl.classList.remove('negative');
 
-            if (pOp.minedThisYear === BLOCKS_PER_YEAR) {
-                pOp.year++;
-                pOp.minedThisYear = 0;
-                let df = 1 / Math.pow(1 + DISCOUNT_RATE, pOp.year);
-                for (let row = 0; row < ROWS; row++) {
-                    for (let col = 0; col < COLS; col++) {
-                        if (!pOp.grid[row][col].mined && pOp.grid[row][col].type !== 'W') {
-                            pOp.grid[row][col].currentValue = pOp.grid[row][col].baseValue * df;
+            document.getElementById("local-clock").innerText = `Жил ${localState.currentYear}`;
+            document.getElementById("local-throughput").innerText = `${localState.yearMinedCount} / ${BLOCKS_PER_YEAR} блок`;
+            document.getElementById("local-discount").innerText = (1 / Math.pow(1 + DISCOUNT_RATE, localState.currentYear)).toFixed(3);
+            renderGrid(1);
+        }
+
+        function updateRemoteUI() {
+            const wEl = document.getElementById("remote-wallet");
+            wEl.innerText = remoteState.wallet >= 0 ? `$${Math.round(remoteState.wallet)}k` : `-$${Math.abs(Math.round(remoteState.wallet))}k`;
+            if(remoteState.wallet < 0) wEl.classList.add('negative'); else wEl.classList.remove('negative');
+
+            document.getElementById("remote-clock").innerText = `Жил ${remoteState.currentYear}`;
+            document.getElementById("remote-throughput").innerText = `${remoteState.yearMinedCount} / ${BLOCKS_PER_YEAR} блок`;
+            document.getElementById("remote-discount").innerText = (1 / Math.pow(1 + DISCOUNT_RATE, remoteState.currentYear)).toFixed(3);
+            renderGrid(2);
+        }
+
+        function finalizeLocalPit() {
+            if (localState.isFinalized) return;
+            localState.isFinalized = true;
+            document.getElementById("local-finalize-btn").disabled = true;
+            document.getElementById("local-msg").innerText = "🔒 Таны тал түгжигдлээ. Хүлээж байна...";
+            document.getElementById("local-msg").style.color = "#ffca28";
+
+            sendNetworkPayload({ type: "FINALIZE", sender: myPlayerId });
+            checkMatchConclusion();
+        }
+
+        function checkMatchConclusion() {
+            if (localState.isFinalized && remoteState.isFinalized) {
+                matchActive = false;
+                let finalLocal = Math.round(localState.wallet);
+                let finalRemote = Math.round(remoteState.wallet);
+
+                for (let r = 0; r < ROWS; r++) {
+                    for (let c = 0; c < COLS; c++) {
+                        let optMined = theoreticalOptimalSequence[r][c];
+                        
+                        let lEl = document.getElementById(`l-b-${r}-${c}`);
+                        if (lEl) {
+                            if (optMined && !localState.grid[r][c].mined) lEl.classList.add('should-have-mined');
+                            if (!optMined && localState.grid[r][c].mined) lEl.classList.add('incorrectly-mined');
+                        }
+
+                        let rEl = document.getElementById(`r-b-${r}-${c}`);
+                        if (rEl) {
+                            if (optMined && !remoteState.grid[r][c].mined) rEl.classList.add('should-have-mined');
+                            if (!optMined && remoteState.grid[r][c].mined) rEl.classList.add('incorrectly-mined');
                         }
                     }
                 }
-            }
 
-            updateDashboardUI('op', pOp);
-            renderGridUI('op-grid', pOp.grid, false);
+                const lSide = document.getElementById("local-side");
+                const rSide = document.getElementById("remote-side");
 
-            checkMatchEndCondition();
-        }
+                if (finalLocal === finalRemote) {
+                    document.getElementById("local-msg").innerText = document.getElementById("remote-msg").innerText = `🤝 ТЭНЦЛЭЭ! NPV: $${finalLocal}k`;
+                    document.getElementById("local-msg").style.color = document.getElementById("remote-msg").style.color = "#ffca28";
+                } else if (finalLocal > finalRemote) {
+                    document.getElementById("local-msg").innerText = `🏆 ТА ЯЛЛАА! NPV: $${finalLocal}k`;
+                    document.getElementById("remote-msg").innerText = `❌ ХОЖИГДЛОО... NPV: $${finalRemote}k`;
+                    document.getElementById("local-msg").style.color = "#66bb6a";
+                    document.getElementById("remote-msg").style.color = "#ef5350";
+                    lSide.classList.add('active-winner');
+                    rSide.classList.add('active-loser');
+                } else {
+                    document.getElementById("local-msg").innerText = `❌ ХОЖИГДЛОО... NPV: $${finalLocal}k`;
+                    document.getElementById("remote-msg").innerText = `🏆 ӨРСӨЛДӨГЧ ЯЛЛАА! NPV: $${finalRemote}k`;
+                    document.getElementById("local-msg").style.color = "#ef5350";
+                    document.getElementById("remote-msg").style.color = "#66bb6a";
+                    lSide.classList.add('active-loser');
+                    rSide.classList.add('active-winner');
+                }
 
-        function updateDashboardUI(prefix, playerObj) {
-            document.getElementById(`${prefix}-wallet`).innerText = `$${Math.round(playerObj.wallet)}k`;
-            document.getElementById(`${prefix}-wallet`).style.color = playerObj.wallet >= 0 ? "#4caf50" : "#ef5350";
-            document.getElementById(`${prefix}-clock`).innerText = `Жил ${playerObj.year}`;
-            document.getElementById(`${prefix}-throughput`).innerText = `${playerObj.minedThisYear} / ${BLOCKS_PER_YEAR}`;
-            document.getElementById(`${prefix}-df`).innerText = (1 / Math.pow(1 + DISCOUNT_RATE, playerObj.year)).toFixed(3);
-        }
-
-        // Уурхайг гараар хаах
-        function triggerFinalize() {
-            if(pMe.finalized) return;
-            pMe.finalized = true;
-            document.getElementById('finalize-btn').disabled = true;
-            document.getElementById('my-title').innerText = "ТАНЫ УУРХАЙ (ХААГДСАН 📐)";
-            
-            sendNetMessage({ type: "FINALIZE_ACTION" });
-            checkMatchEndCondition();
-        }
-
-        // Тэмцээн дууссан эсэхийг шалгах
-        function checkMatchEndCondition() {
-            // Эсвэл хоёулаа гараар хаасан, эсвэл бүх блок ухагдсан үед дуусна
-            let allMeMined = pMe.totalMined >= (ROWS * COLS);
-            let allOpMined = pOp.totalMined >= (ROWS * COLS);
-
-            if ((pMe.finalized || allMeMined) && (pOp.finalized || allOpMined)) {
-                executeMatchEvaluation();
-            }
-        }
-
-        // Үр дүнг нэгтгэн дүгнэх
-        function executeMatchEvaluation() {
-            gameActive = false;
-            const msgEl = document.getElementById('broadcast-msg');
-
-            // Оновчтой замын индикатор тэмдэглэгээг зурах
-            for (let r = 0; r < ROWS; r++) {
-                for (let c = 0; c < COLS; c++) {
-                    const blockEl = document.getElementById(`my-grid-${r}-${c}`);
-                    if (!blockEl) continue;
-                    const studentMined = pMe.grid[r][c].mined;
-                    const optimalMined = theoreticalOptimalSequence[r][c];
-
-                    if (optimalMined && !studentMined) {
-                        blockEl.classList.add('should-have-mined');
-                    } else if (!optimalMined && studentMined) {
-                        blockEl.classList.add('incorrectly-mined');
-                    }
+                // ШИНЭЧЛЭЛТ 2: Тоглоом дуусахад зөвхөн Өрөө үүсгэгч (Host)-д дахин эхлүүлэх товчийг харуулах
+                if (isHost) {
+                    document.getElementById("host-restart-btn").style.display = "inline-block";
+                } else {
+                    document.getElementById("remote-msg").innerText += " [Host шинэ үе эхлүүлэхийг хүлээнэ үү]";
                 }
             }
-
-            let myEff = targetMaxNPV > 0 ? Math.round((pMe.wallet / targetMaxNPV) * 100) : 0;
-            let opEff = targetMaxNPV > 0 ? Math.round((pOp.wallet / targetMaxNPV) * 100) : 0;
-
-            let resultStatus = "";
-            if (pMe.wallet > pOp.wallet) {
-                resultStatus = `🏆 ТА ЯЛЛАА! (Таны үр ашиг: ${myEff}%, Өрсөлдөгч: ${opEff}%)`;
-                msgEl.style.color = "#66bb6a";
-            } else if (pMe.wallet < pOp.wallet) {
-                resultStatus = `❌ ӨРСӨЛДӨГЧ ЯЛЛАА! (Таны үр ашиг: ${myEff}%, Өрсөлдөгч: ${opEff}%)`;
-                msgEl.style.color = "#ef5350";
-            } else {
-                resultStatus = `🤝 ТЭНЦЛЭЭ! Хоёр тоглогчийн NPV яг ижил гарлаа. (Үр ашиг: ${myEff}%)`;
-                msgEl.style.color = "#ffb74d";
-            }
-
-            msgEl.innerText = `${resultStatus} | Зорилтот макс NPV байсан: $${targetMaxNPV}k`;
-
-            // ШИНЭЧЛЭЛТ: Тоглоом дуусахад зөвхөн Host-д дахин эхлүүлэх товчийг харуулах
-            if (myRole === "host") {
-                document.getElementById('host-restart-btn').style.display = "inline-block";
-            } else {
-                msgEl.innerText += " [Host шинэ тоглоом эхлүүлэхийг хүлээнэ үү]";
-            }
         }
 
-        // ШИНЭ ФУНКЦ: Host дахин эхлүүлэх товч дарах үед
+        // ШИНЭ ФУНКЦ: Host дахин тоглуулах товч дарах үед ажиллана
         function triggerHostRestart() {
-            if (myRole !== "host") return;
-            generateSharedDeposit(); // Шинэ санамсаргүй орд газрын бүтэц үүсгэх
-            sendNetMessage({ type: "RESTART", grid: seedGridData }); // Сүлжээгээр шинэ газрын зургийг илгээх
-            resetLocalGameState(); // Өөрийн талын тоглоомыг шинэчлэх
+            if (!isHost) return;
+            baseDepositBlueprint = generateDepositBlueprint(); // Шинэ санамсаргүй орд үүсгэх
+            sendNetworkPayload({
+                type: "RESTART_GAME",
+                blueprint: baseDepositBlueprint,
+                sender: myPlayerId
+            });
+            resetMatchStateToNew();
         }
 
-        // ШИНЭ ФУНКЦ: Хоёр талын тоглоомын төлөвийг бүрэн цэвэрлэж дахин эхлүүлэх
-        function resetLocalGameState() {
-            pMe = { wallet: 0, year: 0, minedThisYear: 0, totalMined: 0, finalized: false, grid: [] };
-            pOp = { wallet: 0, year: 0, minedThisYear: 0, totalMined: 0, finalized: false, grid: [] };
-            
-            document.getElementById('my-title').innerText = `ТАНЫ УУРХАЙ (${myRole === 'host' ? 'Host' : 'Guest'})`;
-            document.getElementById('op-title').innerText = "ӨРСӨЛДӨГЧИЙН УУРХАЙ";
-            document.getElementById('broadcast-msg').innerText = "🔄 ШИНЭ ТОГЛООМ ЭХЭЛЛЭЭ! (Ижил шинэ орд үүслээ)";
-            document.getElementById('broadcast-msg').style.color = "#ffb74d";
-            document.getElementById('finalize-btn').disabled = false;
-            document.getElementById('host-restart-btn').style.display = "none";
+        // ШИНЭ ФУНКЦ: Тоглоомын талбарыг бүрэн цэвэрлэж, шинэ орд дээр тоглоомыг шинээр эхлүүлэх
+        function resetMatchStateToNew() {
+            localState = { wallet: 0, currentYear: 0, yearMinedCount: 0, totalMinedCount: 0, isFinalized: false, grid: [] };
+            remoteState = { wallet: 0, currentYear: 0, yearMinedCount: 0, totalMinedCount: 0, isFinalized: false, grid: [] };
 
-            updateDashboardUI('my', pMe);
-            updateDashboardUI('op', pOp);
-            
-            calculateTheoreticalMaxNPV();
-            setupLocalPlayers();
-            gameActive = true;
+            document.getElementById("local-msg").innerText = "";
+            document.getElementById("remote-msg").innerText = "";
+            document.getElementById("local-finalize-btn").disabled = false;
+            document.getElementById("host-restart-btn").style.display = "none";
+
+            const lSide = document.getElementById("local-side");
+            const rSide = document.getElementById("remote-side");
+            lSide.className = "player-side";
+            rSide.className = "player-side";
+
+            updateLocalUI();
+            updateRemoteUI();
+            setupMatchEnvironments();
         }
 
-        // Лерч-Гроссман дээр суурилсан Макс NPV тооцоологч алгоритм
-        function calculateTheoreticalMaxNPV() {
+        function calculateGlobalOptimalNPV() {
             let simGrid = [];
             for (let r = 0; r < ROWS; r++) {
                 simGrid[r] = [];
                 for (let c = 0; c < COLS; c++) {
-                    simGrid[r][c] = { r: r, c: c, type: seedGridData[r][c].type, baseValue: seedGridData[r][c].baseValue, mined: false };
+                    simGrid[r][c] = { r: r, c: c, type: baseDepositBlueprint[r][c].type, baseValue: baseDepositBlueprint[r][c].baseValue, mined: false };
                 }
             }
 
-            let simWallet = 0, simTotalMined = 0;
+            let simWallet = 0; let simTotalMined = 0;
 
             while (true) {
-                let bestCone = null, bestConeValue = -Infinity;
+                let bestCone = null; let bestConeValue = -Infinity;
                 let currentYearSim = Math.floor(simTotalMined / BLOCKS_PER_YEAR);
                 let currentDF = 1 / Math.pow(1 + DISCOUNT_RATE, currentYearSim);
 
                 for (let r = 0; r < ROWS; r++) {
                     for (let c = 0; c < COLS; c++) {
                         if (!simGrid[r][c].mined && simGrid[r][c].type === 'HG') {
-                            let cone = [];
-                            getSimCone(r, c, simGrid, cone);
+                            let cone = []; getSimCone(r, c, simGrid, cone);
                             let val = 0;
-                            for (let b of cone) { val += b.type === 'W' ? -25 : b.baseValue * currentDF; }
+                            for (let b of cone) val += b.type === 'W' ? -25 : b.baseValue * currentDF;
                             if (val > bestConeValue) { bestConeValue = val; bestCone = cone; }
                         }
                     }
@@ -687,10 +758,9 @@
                     for (let r = 0; r < ROWS; r++) {
                         for (let c = 0; c < COLS; c++) {
                             if (!simGrid[r][c].mined && simGrid[r][c].type === 'LG') {
-                                let cone = [];
-                                getSimCone(r, c, simGrid, cone);
+                                let cone = []; getSimCone(r, c, simGrid, cone);
                                 let val = 0;
-                                for (let b of cone) { val += b.type === 'W' ? -25 : b.baseValue * currentDF; }
+                                for (let b of cone) val += b.type === 'W' ? -25 : b.baseValue * currentDF;
                                 if (val > bestConeValue) { bestConeValue = val; bestCone = cone; }
                             }
                         }
@@ -716,14 +786,14 @@
             cone.push({ r: r, c: c, type: simGrid[r][c].type, baseValue: simGrid[r][c].baseValue });
             if (r > 0) {
                 for (let p of [c - 1, c, c + 1]) {
-                    if (p >= 0 && p < COLS) {
-                        if (!simGrid[r - 1][p].mined) { getSimCone(r - 1, p, simGrid, cone); }
+                    if (p >= 0 && p < COLS && !simGrid[r - 1][p].mined) {
+                        getSimCone(r - 1, p, simGrid, cone);
                     }
                 }
             }
         }
 
-        window.onload = connectMQTT;
+        window.onload = initNetwork;
     </script>
 </body>
 </html>
