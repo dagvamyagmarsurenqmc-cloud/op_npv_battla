@@ -233,7 +233,7 @@
         <div class="player-side" id="local-side">
             <div class="player-header local-player-color" id="local-title">Таны тал</div>
             <div class="dashboard">
-                <div class="stat">Одоогийн NPV: <span id="local-wallet" class="wallet-val">$0k</span></div>
+                <div class="stat">NPV Явц: <span id="local-wallet" class="wallet-val">$0k</span></div>
                 <div class="stat">Хугацаа: <span id="local-clock">Жил 0</span></div>
                 <div class="stat">Хүчин чадал: <span id="local-throughput">0 / 24 блок</span></div>
                 <div class="stat">Дискаунт Коэф: <span id="local-discount">1.000</span></div>
@@ -251,7 +251,7 @@
         <div class="player-side" id="remote-side">
             <div class="player-header remote-player-color" id="remote-title">ӨРСӨЛДӨГЧ</div>
             <div class="dashboard">
-                <div class="stat">Одоогийн NPV: <span id="remote-wallet" class="wallet-val">$0k</span></div>
+                <div class="stat">NPV Явц: <span id="remote-wallet" class="wallet-val">$0k</span></div>
                 <div class="stat">Хугацаа: <span id="remote-clock">Жил 0</span></div>
                 <div class="stat">Хүчин чадал: <span id="remote-throughput">0 / 24 блок</span></div>
                 <div class="stat">Дискаунт Коэф: <span id="remote-discount">1.000</span></div>
@@ -267,7 +267,7 @@
     </div>
 
     <footer>
-        © ШУТИС ГУУС H.MIA350 Уурхайн төсөл зохиомж, төлөвлөлт хичээлийн семинар - Real-Time P2P Arena
+        © ШУТИС ГУУС H.MIA350 Ил уурхайн төсөл зохиомж, төлөвлөлт хичээлийн семинар - Real-Time P2P Arena
     </footer>
 
     <script>
@@ -402,7 +402,7 @@
         function joinRoom() {
             let input = document.getElementById("room-input").value.trim();
             if (input.length < 5) {
-                alert("Зөв кодоо оруулна уу.");
+                alert("Кодоо зөв оруулна уу.");
                 return;
             }
             roomCode = input;
@@ -418,7 +418,7 @@
                     display.style.display = "block";
                     
                     if (isHost) {
-                        display.innerText = `Өрөө үүслээ! Код: ${roomCode}. Өрсөлдөгчөө хүлээж байна...`;
+                        display.innerText = `Өрөө үүслээ! Код: ${roomCode}. Өрсөлдөгчийг хүлээж байна...`;
                         baseDepositBlueprint = generateDepositBlueprint();
                     } else {
                         display.innerText = `Өрөөнд холбогдлоо: ${roomCode}. Тоглоом эхэлж байна...`;
@@ -620,7 +620,7 @@
                     }
                 }
                 if (structuralBlocker) {
-                    document.getElementById("local-msg").innerText = "🛑 НАЛТАЙН ЗӨРЧИЛ: Дээд талын блокуудыг эхэлж авна уу!";
+                    document.getElementById("local-msg").innerText = "🛑 ГЕОТЕХНИКИЙН ЗӨРЧИЛ: Дээд талын блокуудыг эхэлж олборлоно уу!";
                     return;
                 }
             }
