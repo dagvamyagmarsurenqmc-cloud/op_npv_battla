@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Level 2: Lane's Throughput Optimization (24 Blocks/Yr)</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a24;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #ffca28;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .subtitle {
+            color: #aaaaaa;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            text-align: center;
+            max-width: 800px;
+        }
+
+        #dashboard {
+            display: flex;
+            gap: 20px;
+            background-color: #252538;
+            padding: 15px 30px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            font-size: 1.1em;
+            border: 1px solid #3d3d5c;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .stat span {
+            font-weight: bold;
+            color: #ffca28;
+        }
+        
+        .stat #wallet { color: #4caf50; }
+        .stat #clock { color: #ef5350; }
+        .stat #throughput { color: #03a9f4; }
+
+        #grid-container {
+            background-color: #0f0f14;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+            margin-bottom: 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(20, 42px);
+            grid-template-rows: repeat(12, 42px);
+            gap: 2px;
+        }
+
+        .block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6em;
+            font-weight: bold;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            position: relative;
+        }
+
+        .waste {
+            background: linear-gradient(135deg, #8d6e63, #5d4037);
+            color: #ffccbc;
+            border: 1px solid #4e342e;
+        }
+        .waste:hover { background: linear-gradient(135deg, #a1887f, #6d4c41); }
+
+        .ore-lg {
+            background: linear-gradient(135deg, #a484e1, #673ab7);
+            color: #fff;
+            border: 1px solid #512da8;
+        }
+        .ore-lg:hover { background: linear-gradient(135deg, #b39ddb, #7e57c2); }
+
+        .ore-hg {
+            background: linear-gradient(135deg, #ffb300, #ff6f00);
+            color: #fff;
+            border: 1px solid #e65100;
+            box-shadow: 0 0 8px rgba(255,160,0,0.3);
+        }
+        .ore-hg:hover { background: linear-gradient(135deg, #ffca28, #ff8f00); }
+
+        .mined {
+            background: #111116 !important;
+            color: #444455 !important;
+            border: 1px dashed #2d2d3f !important;
+            cursor: default;
+            box-shadow: none !important;
+        }
+        .mined .val, .mined .type { display: none; }
+        .mined::after {
+            content: "⛏️";
+            font-size: 1.1em;
+            opacity: 0.2;
+        }
+
+        .should-have-mined { box-shadow: inset 0 0 0 3px #4caf50 !important; }
+        .incorrectly-mined { box-shadow: inset 0 0 0 3px #ef5350 !important; }
+
+        .block .type {
+            font-size: 0.65em;
+            opacity: 0.9;
+            margin-bottom: 1px;
+        }
+
+        #message-box {
+            height: 35px;
+            font-weight: bold;
+            color: #ef5350;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 1.2em;
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+        }
+
+        button {
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            font-size: 1em;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .btn-reset { background-color: #5c6bc0; }
+        .btn-reset:hover { background-color: #3f51b5; }
+        
+        .btn-finalize { background-color: #4caf50; }
+        .btn-finalize:hover { background-color: #388e3c; }
+
+        .instructions {
+            margin-top: 20px;
+            background-color: #222230;
+            padding: 15px 20px;
+            border-radius: 8px;
+            max-width: 800px;
+            font-size: 0.9em;
+            line-height: 1.4;
+            border-left: 5px solid #ffca28;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Уурхайн эцсийн хүрээ тодорхойлох: Boss Rush</h1>
+    <div class="subtitle">Түвшин 2: Цаг хугацаатай уралдах (Жилийн хүчин чадал 24 блок)</div>
+
+    <div id="dashboard">
+        <div class="stat">Төслийн өнөөгийн үнэ цэнэ NPV: <span id="wallet">$0k</span></div>
+        <div class="stat">Хугацаа: <span id="clock">Жил 0</span></div>
+        <div class="stat">Уурхайн хүчин чадал: <span id="throughput">0 / 24 блок</span></div>
+        <div class="stat">Дискаунт: <span id="discount-display">1.000</span></div>
+        <div class="stat">Зорилтот Макс NPV: <span id="max-npv">Calculating...</span></div>
+    </div>
+
+    <div id="message-box"></div>
+
+    <div id="grid-container">
+        <div class="grid" id="mine-grid"></div>
+    </div>
+
+    <div class="controls">
+        <button class="btn-finalize" id="finalize-btn" onclick="finalizePit()">Уурхайг хаах 📐</button>
+        <button class="btn-reset" onclick="resetGame()">Орд шинээр үүсгэх 🔄</button>
+    </div>
+
+    <div class="instructions">
+        <strong>Заавар:</strong>
+        <ul>
+            <li><strong>Үндсэн зарчим:</strong> Уурхай тогтмол хүчин чадлаар ажиллана. Уурхай <strong>24 блок олборлосноор нэг жил өнгөрнө</strong>. Жил шинээр гарах бүрд олборлолтод өртөөгүй байгаа хүдрийн блокуудын үнэ цэнэ 8%-иар хорогдоно.</li>
+            <li><strong>Оновчлолын даалгавар:</strong> Та жилд 24 блок л олборлоно. Эхний жилүүдэд ядуу хүдэр олборлох тусам олборлолтод өртөхөө хүлээж буй баян блокуудын өнөөгийн үнэ цэнэ унана (NPV). </li>
+            <li><strong>Амжилтад хөтлөх стратеги:</strong> Жилд олборлох 24 блокоо зөв сонго. Ордын гүнд орших баян агуулгатай блокуудыг аль болох эрт олборлохын тулд шаардлагагүй хөрс хуулалт хийхээс зайлсхий. Олборлолтын эхний жилүүдийн мөнгөн урсгалаа аль болох өндөр байлгахыг зорь.</li>
+        </ul>
+    </div>
+
+    <script>
+        const ROWS = 12;
+        const COLS = 20;
+        const DISCOUNT_RATE = 0.08;
+        const BLOCKS_PER_YEAR = 24; // Шинэчлэгдсэн: Жилд 24 блок ухна
+        
+        let wallet = 0;
+        let currentYear = 0;
+        let blocksMinedThisYear = 0;
+        let totalBlocksMined = 0;
+        let gameState = [];
+        let targetMaxNPV = 0;
+        let theoreticalOptimalSequence = []; 
+        let isFinalized = false;
+
+        function initGame() {
+            wallet = 0;
+            currentYear = 0;
+            blocksMinedThisYear = 0;
+            totalBlocksMined = 0;
+            isFinalized = false;
+            gameState = [];
+            
+            document.getElementById('wallet').innerText = "$0k";
+            document.getElementById('wallet').style.color = "#4caf50";
+            document.getElementById('clock').innerText = "Жил 0";
+            document.getElementById('throughput').innerText = `0 / ${BLOCKS_PER_YEAR} блок`;
+            document.getElementById('discount-display').innerText = "1.000";
+            document.getElementById('message-box').innerText = "";
+            document.getElementById('finalize-btn').disabled = false;
+            document.getElementById('finalize-btn').style.opacity = "1";
+            
+            // 1. Initialize base grid with standard waste (-25k value)
+            for (let r = 0; r < ROWS; r++) {
+                gameState[r] = [];
+                for (let c = 0; c < COLS; c++) {
+                    gameState[r][c] = {
+                        type: 'W',
+                        baseValue: -25,
+                        currentValue: -25,
+                        mined: false
+                    };
+                }
+            }
+
+            // 2. Generate High-Grade Core (Exactly 16 connected blocks)
+            let hgCluster = [];
+            let startRow = Math.floor(Math.random() * 3) + 6; // Deep placement (Rows 6-9)
+            let startCol = Math.floor(Math.random() * 8) + 6; 
+            
+            gameState[startRow][startCol].type = 'HG';
+            gameState[startRow][startCol].baseValue = 170;
+            gameState[startRow][startCol].currentValue = 170;
+            hgCluster.push({r: startRow, c: startCol});
+
+            while (hgCluster.length < 16) {
+                let baseBlock = hgCluster[Math.floor(Math.random() * hgCluster.length)];
+                let directions = [[-1, 0], [1, 0], [0, -1], [0, 1]]; 
+                let dir = directions[Math.floor(Math.random() * directions.length)];
+                let newR = baseBlock.r + dir[0];
+                let newC = baseBlock.c + dir[1];
+
+                if (newR > 2 && newR < ROWS && newC >= 0 && newC < COLS) {
+                    if (gameState[newR][newC].type === 'W') {
+                        gameState[newR][newC].type = 'HG';
+                        gameState[newR][newC].baseValue = 170;
+                        gameState[newR][newC].currentValue = 170;
+                        hgCluster.push({r: newR, c: newC});
+                    }
+                }
+            }
+
+            // 3. Generate surrounding/buffer Low-Grade Halos (14 blocks scattered middle layer)
+            let lgTargetCount = 14;
+            let addedLg = 0;
+            while (addedLg < lgTargetCount) {
+                let r = Math.floor(Math.random() * 5) + 2; // Mid benches (Rows 2-6)
+                let c = Math.floor(Math.random() * COLS);
+
+                if (gameState[r][c].type === 'W') {
+                    gameState[r][c].type = 'LG';
+                    gameState[r][c].baseValue = 55;
+                    gameState[r][c].currentValue = 55;
+                    addedLg++;
+                }
+            }
+
+            // 4. Run background block sequence optimizer to find maximum target NPV
+            calculateTheoreticalMaxNPV();
+
+            // 5. Render Grid UI
+            renderGrid();
+        }
+
+        function renderGrid() {
+            const gridEl = document.getElementById('mine-grid');
+            gridEl.innerHTML = '';
+
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const block = gameState[r][c];
+                    const blockEl = document.createElement('div');
+                    blockEl.id = `b-${r}-${c}`;
+                    
+                    let typeClass = 'waste';
+                    if (block.type === 'HG') typeClass = 'ore-hg';
+                    if (block.type === 'LG') typeClass = 'ore-lg';
+                    
+                    blockEl.className = `block ${typeClass}`;
+                    if (block.mined) blockEl.classList.add('mined');
+
+                    let displayVal = block.currentValue > 0 
+                        ? `+${Math.round(block.currentValue)}k` 
+                        : `${Math.round(block.currentValue)}k`;
+
+                    blockEl.innerHTML = `
+                        <div class="type">${block.type}</div>
+                        <div class="val">${displayVal}</div>
+                    `;
+                    
+                    blockEl.addEventListener('click', () => mineBlock(r, c));
+                    gridEl.appendChild(blockEl);
+                }
+            }
+        }
+
+        function mineBlock(r, c) {
+            if (isFinalized) return;
+            const block = gameState[r][c];
+            const msgBox = document.getElementById('message-box');
+            msgBox.innerText = ""; 
+
+            if (block.mined) return;
+
+            // Enforce Geotechnical 45-degree slope pit wall constraint
+            if (r > 0) {
+                const parents = [c - 1, c, c + 1];
+                let blocked = false;
+
+                for (let p of parents) {
+                    if (p >= 0 && p < COLS) {
+                        if (!gameState[r - 1][p].mined) {
+                            blocked = true;
+                            const parentEl = document.getElementById(`b-${r-1}-${p}`);
+                            parentEl.style.transform = "scale(1.2)";
+                            parentEl.style.borderColor = "#ef5350";
+                            parentEl.style.zIndex = "10";
+                            setTimeout(() => {
+                                parentEl.style.transform = "scale(1)";
+                                parentEl.style.borderColor = getBlockBorderColor(r-1, p);
+                                parentEl.style.zIndex = "1";
+                            }, 250);
+                        }
+                    }
+                }
+
+                if (blocked) {
+                    msgBox.innerText = "🛑 SLOPE VIOLATION: Secure the safe upper benches first!";
+                    msgBox.style.color = "#ef5350";
+                    return;
+                }
+            }
+
+            // Commit mining step
+            block.mined = true;
+            wallet += block.currentValue;
+            
+            blocksMinedThisYear++;
+            totalBlocksMined++;
+
+            // Check if block milestone capacity advances the annual cycle
+            if (blocksMinedThisYear === BLOCKS_PER_YEAR) {
+                currentYear++;
+                blocksMinedThisYear = 0;
+
+                // Advance compound time discounting on unmined blocks
+                let currentDiscountFactor = 1 / Math.pow(1 + DISCOUNT_RATE, currentYear);
+                
+                for (let row = 0; row < ROWS; row++) {
+                    for (let col = 0; col < COLS; col++) {
+                        if (!gameState[row][col].mined && gameState[row][col].type !== 'W') {
+                            gameState[row][col].currentValue = gameState[row][col].baseValue * currentDiscountFactor;
+                        }
+                    }
+                }
+            }
+
+            // Update UI Dashboards
+            document.getElementById('wallet').innerText = (wallet >= 0 ? `$${Math.round(wallet)}k` : `-$${Math.abs(Math.round(wallet))}k`);
+            document.getElementById('wallet').style.color = wallet >= 0 ? "#4caf50" : "#ef5350";
+            document.getElementById('clock').innerText = `Жил ${currentYear}`;
+            document.getElementById('throughput').innerText = `${blocksMinedThisYear} / ${BLOCKS_PER_YEAR} блок`;
+            document.getElementById('discount-display').innerText = (1 / Math.pow(1 + DISCOUNT_RATE, currentYear)).toFixed(3);
+
+            renderGrid();
+        }
+
+        function getBlockBorderColor(r, c) {
+            let t = gameState[r][c].type;
+            if (t === 'HG') return '#e65100';
+            if (t === 'LG') return '#512da8';
+            return '#4e342e';
+        }
+
+        // --- BACKGROUND NPV CLOSURE OPTIMIZER ENGINE ---
+        function calculateTheoreticalMaxNPV() {
+            let simGrid = [];
+            for (let r = 0; r < ROWS; r++) {
+                simGrid[r] = [];
+                for (let c = 0; c < COLS; c++) {
+                    simGrid[r][c] = { r: r, c: c, type: gameState[r][c].type, baseValue: gameState[r][c].baseValue, mined: false };
+                }
+            }
+
+            let simWallet = 0;
+            let simTotalMined = 0;
+
+            while (true) {
+                let bestCone = null;
+                let bestConeValue = -Infinity;
+                let currentYearSim = Math.floor(simTotalMined / BLOCKS_PER_YEAR);
+                let currentDF = 1 / Math.pow(1 + DISCOUNT_RATE, currentYearSim);
+
+                for (let r = 0; r < ROWS; r++) {
+                    for (let c = 0; c < COLS; c++) {
+                        if (!simGrid[r][c].mined && simGrid[r][c].type === 'HG') {
+                            let cone = [];
+                            getSimCone(r, c, simGrid, cone);
+                            
+                            let val = 0;
+                            for (let b of cone) {
+                                val += b.type === 'W' ? -25 : b.baseValue * currentDF;
+                            }
+
+                            if (val > bestConeValue) {
+                                bestConeValue = val;
+                                bestCone = cone;
+                            }
+                        }
+                    }
+                }
+
+                if (!bestCone || bestConeValue <= 0) {
+                    bestCone = null;
+                    bestConeValue = -Infinity;
+                    for (let r = 0; r < ROWS; r++) {
+                        for (let c = 0; c < COLS; c++) {
+                            if (!simGrid[r][c].mined && simGrid[r][c].type === 'LG') {
+                                let cone = [];
+                                getSimCone(r, c, simGrid, cone);
+                                let val = 0;
+                                for (let b of cone) {
+                                    val += b.type === 'W' ? -25 : b.baseValue * currentDF;
+                                }
+                                if (val > bestConeValue) {
+                                    bestConeValue = val;
+                                    bestCone = cone;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (bestCone && bestConeValue > 0) {
+                    for (let b of bestCone) {
+                        simGrid[b.r][b.c].mined = true;
+                        let loopYear = Math.floor(simTotalMined / BLOCKS_PER_YEAR);
+                        let loopDF = 1 / Math.pow(1 + DISCOUNT_RATE, loopYear);
+                        simWallet += b.type === 'W' ? -25 : b.baseValue * loopDF;
+                        simTotalMined++;
+                    }
+                } else {
+                    break;
+                }
+            }
+
+            targetMaxNPV = simWallet > 0 ? Math.round(simWallet) : 100;
+            document.getElementById('max-npv').innerText = `$${targetMaxNPV}k`;
+            theoreticalOptimalSequence = simGrid.map(row => row.map(b => b.mined));
+        }
+
+        function getSimCone(r, c, simGrid, cone) {
+            if (cone.some(b => b.r === r && b.c === c)) return;
+            cone.push({r: r, c: c, type: simGrid[r][c].type, baseValue: simGrid[r][c].baseValue});
+
+            if (r > 0) {
+                let parents = [c - 1, c, c + 1];
+                for (let p of parents) {
+                    if (p >= 0 && p < COLS) {
+                        if (!simGrid[r - 1][p].mined) {
+                            getSimCone(r - 1, p, simGrid, cone);
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- FINAL EVALUATION METHODS ---
+        function finalizePit() {
+            if (isFinalized) return;
+            isFinalized = true;
+            document.getElementById('finalize-btn').disabled = true;
+            document.getElementById('finalize-btn').style.opacity = "0.5";
+
+            const msgBox = document.getElementById('message-box');
+            let efficiency = targetMaxNPV > 0 ? Math.round((wallet / targetMaxNPV) * 100) : 0;
+            if (efficiency < 0) efficiency = 0;
+            if (efficiency > 100) efficiency = 100;
+
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const blockEl = document.getElementById(`b-${r}-${c}`);
+                    const studentMined = gameState[r][c].mined;
+                    const optimalMined = theoreticalOptimalSequence[r][c];
+
+                    if (optimalMined && !studentMined) {
+                        blockEl.classList.add('should-have-mined');
+                    } else if (!optimalMined && studentMined) {
+                        blockEl.classList.add('incorrectly-mined');
+                    }
+                }
+            }
+
+            if (efficiency >= 90) {
+                msgBox.innerText = `🏆 LANE'S CHAMPION! Efficiency: ${efficiency}%. Төлөвлөлтийг хангалттай сайн хийлээ!`;
+                msgBox.style.color = "#66bb6a";
+            } else if (efficiency >= 70) {
+                msgBox.innerText = `👍 DECENT SEQUENCE. Efficiency: ${efficiency}%. Эхний жилүүдэд ядуу хүдэр дээр төвлөрснөөр баян агуулгатай хүдэр олборлолт цөөн жилээр хойшилсон байна.`;
+                msgBox.style.color = "#81c784";
+            } else if (efficiency >= 45) {
+                msgBox.innerText = `⚠️ PRODUCTION DELAY. Efficiency: ${efficiency}%. Дискаунтын улмаас гүнд буй баян хүдрийн үнэ цэнэ унасан байна.`;
+                msgBox.style.color = "#ffb74d";
+            } else {
+                msgBox.innerText = `🛑 ASSET DEPRECIATION. Efficiency: ${efficiency}%. Цаг хугацааны явцад нөөцийн үнэ цэнэ бүрэн алдагдлаа.`;
+                msgBox.style.color = "#e57373";
+            }
+        }
+
+        function resetGame() {
+            initGame();
+        }
+
+        window.onload = initGame;
+    </script>
+</body>
+</html>
