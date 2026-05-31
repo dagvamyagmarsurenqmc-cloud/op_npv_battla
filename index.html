@@ -1,72 +1,137 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="mn">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Level 2: Lane's Throughput Optimization (24 Blocks/Yr)</title>
+    <title>Pit Design Arena: Online 1v1 Battle (24 Blocks/Yr)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js" type="text/javascript"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1a1a24;
+            background-color: #0f0f14;
             color: #ffffff;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
             margin: 0;
-            padding: 20px;
+            padding: 10px;
+            user-select: none;
+            box-sizing: border-box;
         }
 
         h1 {
             color: #ffca28;
-            margin-bottom: 5px;
+            margin: 10px 0 5px 0;
             text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .subtitle {
-            color: #aaaaaa;
-            margin-bottom: 20px;
-            font-size: 1.1em;
+            letter-spacing: 2px;
+            font-size: 1.4em;
             text-align: center;
-            max-width: 800px;
         }
 
-        #dashboard {
+        #lobby-panel {
+            background-color: #1c1c28;
+            border: 2px solid #3d3d5c;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-top: 50px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .input-group {
+            margin: 15px 0;
+        }
+
+        input {
+            padding: 10px;
+            font-size: 1.1em;
+            border-radius: 6px;
+            border: 1px solid #5c6bc0;
+            background-color: #111116;
+            color: white;
+            text-align: center;
+            width: 80%;
+        }
+
+        button {
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            font-size: 1em;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            margin: 5px;
+        }
+
+        .btn-blue { background-color: #1e88e5; }
+        .btn-blue:hover { background-color: #1565c0; }
+        .btn-green { background-color: #4caf50; }
+        .btn-green:hover { background-color: #388e3c; }
+        .btn-purple { background-color: #7e57c2; }
+        .btn-purple:hover { background-color: #5e35b1; }
+
+        #game-layout {
+            display: none;
+            width: 100%;
+            max-width: 1400px;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #battlefield {
             display: flex;
             gap: 20px;
-            background-color: #252538;
-            padding: 15px 30px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            font-size: 1.1em;
-            border: 1px solid #3d3d5c;
+            justify-content: center;
+            width: 100%;
+            margin-top: 15px;
             flex-wrap: wrap;
+        }
+
+        .arena-pane {
+            background-color: #161622;
+            padding: 12px;
+            border-radius: 10px;
+            border: 2px solid #2d2d3f;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        }
+
+        .arena-pane.my-pane { border-color: #4caf50; }
+        .arena-pane.op-pane { border-color: #ef5350; opacity: 0.85; }
+
+        .pane-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+        .my-pane .pane-title { color: #81c784; }
+        .op-pane .pane-title { color: #e57373; }
+
+        .dash-row {
+            display: flex;
+            gap: 15px;
+            background-color: #222230;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-size: 0.95em;
+            margin-bottom: 10px;
+            border: 1px solid #32324d;
             justify-content: center;
         }
 
-        .stat span {
-            font-weight: bold;
-            color: #ffca28;
-        }
-        
-        .stat #wallet { color: #4caf50; }
-        .stat #clock { color: #ef5350; }
-        .stat #throughput { color: #03a9f4; }
-
-        #grid-container {
-            background-color: #0f0f14;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
-            margin-bottom: 20px;
-        }
+        .stat span { font-weight: bold; color: #ffca28; }
 
         .grid {
             display: grid;
-            grid-template-columns: repeat(20, 42px);
-            grid-template-rows: repeat(12, 42px);
+            grid-template-columns: repeat(20, 26px);
+            grid-template-rows: repeat(12, 26px);
             gap: 2px;
         }
 
@@ -75,99 +140,47 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-size: 0.6em;
+            font-size: 0.5em;
             font-weight: bold;
-            border-radius: 3px;
+            border-radius: 2px;
             cursor: pointer;
-            transition: all 0.2s ease;
             user-select: none;
             position: relative;
         }
 
-        .waste {
-            background: linear-gradient(135deg, #8d6e63, #5d4037);
-            color: #ffccbc;
-            border: 1px solid #4e342e;
-        }
-        .waste:hover { background: linear-gradient(135deg, #a1887f, #6d4c41); }
-
-        .ore-lg {
-            background: linear-gradient(135deg, #a484e1, #673ab7);
-            color: #fff;
-            border: 1px solid #512da8;
-        }
-        .ore-lg:hover { background: linear-gradient(135deg, #b39ddb, #7e57c2); }
-
-        .ore-hg {
-            background: linear-gradient(135deg, #ffb300, #ff6f00);
-            color: #fff;
-            border: 1px solid #e65100;
-            box-shadow: 0 0 8px rgba(255,160,0,0.3);
-        }
-        .ore-hg:hover { background: linear-gradient(135deg, #ffca28, #ff8f00); }
+        .waste { background: linear-gradient(135deg, #7c584c, #4e342e); color: #ffccbc; border: 1px solid #3e2723; }
+        .ore-lg { background: linear-gradient(135deg, #9575cd, #5e35b1); color: #fff; border: 1px solid #4527a0; }
+        .ore-hg { background: linear-gradient(135deg, #ffb300, #ff6f00); color: #fff; border: 1px solid #e65100; }
 
         .mined {
-            background: #111116 !important;
-            color: #444455 !important;
-            border: 1px dashed #2d2d3f !important;
+            background: #0f0f14 !important;
+            border: 1px dashed #252535 !important;
             cursor: default;
-            box-shadow: none !important;
         }
-        .mined .val, .mined .type { display: none; }
-        .mined::after {
-            content: "⛏️";
+        .mined * { display: none !important; }
+        .mined::after { content: "⛏️"; font-size: 1.2em; opacity: 0.15; }
+
+        .should-have-mined { box-shadow: inset 0 0 0 2px #4caf50 !important; }
+        .incorrectly-mined { box-shadow: inset 0 0 0 2px #ef5350 !important; }
+
+        #broadcast-msg {
+            height: 30px;
+            font-weight: bold;
+            color: #ffb74d;
             font-size: 1.1em;
-            opacity: 0.2;
-        }
-
-        .should-have-mined { box-shadow: inset 0 0 0 3px #4caf50 !important; }
-        .incorrectly-mined { box-shadow: inset 0 0 0 3px #ef5350 !important; }
-
-        .block .type {
-            font-size: 0.65em;
-            opacity: 0.9;
-            margin-bottom: 1px;
-        }
-
-        #message-box {
-            height: 35px;
-            font-weight: bold;
-            color: #ef5350;
-            margin-bottom: 15px;
+            margin: 5px 0;
             text-align: center;
-            font-size: 1.2em;
         }
 
-        .controls {
-            display: flex;
-            gap: 20px;
-        }
-
-        button {
-            color: white;
-            border: none;
-            padding: 12px 28px;
-            font-size: 1em;
-            font-weight: bold;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background 0.2s;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
-
-        .btn-reset { background-color: #5c6bc0; }
-        .btn-reset:hover { background-color: #3f51b5; }
-        
-        .btn-finalize { background-color: #4caf50; }
-        .btn-finalize:hover { background-color: #388e3c; }
+        .action-bar { margin-top: 15px; display: flex; gap: 15px; justify-content: center; width: 100%; }
 
         .instructions {
-            margin-top: 20px;
-            background-color: #222230;
-            padding: 15px 20px;
+            margin-top: 15px;
+            background-color: #1c1c28;
+            padding: 12px 20px;
             border-radius: 8px;
-            max-width: 800px;
-            font-size: 0.9em;
+            max-width: 1100px;
+            font-size: 0.85em;
             line-height: 1.4;
             border-left: 5px solid #ffca28;
         }
@@ -175,257 +188,485 @@
 </head>
 <body>
 
-    <h1>Уурхайн эцсийн хүрээ тодорхойлох: Boss Rush</h1>
-    <div class="subtitle">Түвшин 2: Цаг хугацаатай уралдах (Жилийн хүчин чадал 24 блок)</div>
+    <h1>Pit Design Arena: Online 1v1 Battle</h1>
 
-    <div id="dashboard">
-        <div class="stat">Төслийн өнөөгийн үнэ цэнэ NPV: <span id="wallet">$0k</span></div>
-        <div class="stat">Хугацаа: <span id="clock">Жил 0</span></div>
-        <div class="stat">Уурхайн хүчин чадал: <span id="throughput">0 / 24 блок</span></div>
-        <div class="stat">Дискаунт: <span id="discount-display">1.000</span></div>
-        <div class="stat">Зорилтот Макс NPV: <span id="max-npv">Calculating...</span></div>
+    <div id="lobby-panel">
+        <h3 style="margin-top:0; color:#ffca28;">ОНЛАЙН ТЭМЦЭЭН</h3>
+        <p id="lobby-status" style="color:#aaa; font-size:0.95em;">Серверт холбогдож байна...</p>
+        
+        <div id="lobby-controls" style="display:none;">
+            <div class="input-group">
+                <button class="btn-blue" style="width:85%; padding:12px;" onclick="startAsHost()">Шинэ өрөө үүсгэх (Host)</button>
+            </div>
+            <div style="color:#777; margin:10px 0;">— ЭСВЭЛ —</div>
+            <div class="input-group">
+                <input type="text" id="room-input" placeholder="Өрөөний код оруулна уу">
+            </div>
+            <button class="btn-purple" style="width:85%; padding:12px;" onclick="joinAsGuest()">Өрөөнд холбогдох</button>
+        </div>
     </div>
 
-    <div id="message-box"></div>
+    <div id="game-layout">
+        <div id="broadcast-msg">Өрсөлдөгчийг хүлээж байна...</div>
 
-    <div id="grid-container">
-        <div class="grid" id="mine-grid"></div>
-    </div>
+        <div id="battlefield">
+            <div class="arena-pane my-pane">
+                <div class="pane-title" id="my-title">ТАНЫ УУРХАЙ (Тоглогч)</div>
+                <div class="dash-row">
+                    <div class="stat">NPV: <span id="my-wallet">$0k</span></div>
+                    <div class="stat">Хугацаа: <span id="my-clock">Жил 0</span></div>
+                    <div class="stat">Хүчин чадал: <span id="my-throughput">0 / 24</span></div>
+                    <div class="stat">Дискаунт: <span id="my-df">1.000</span></div>
+                </div>
+                <div class="grid" id="my-grid"></div>
+            </div>
 
-    <div class="controls">
-        <button class="btn-finalize" id="finalize-btn" onclick="finalizePit()">Уурхайг хаах 📐</button>
-        <button class="btn-reset" onclick="resetGame()">Орд шинээр үүсгэх 🔄</button>
-    </div>
+            <div class="arena-pane op-pane">
+                <div class="pane-title" id="op-title">ӨРСӨЛДӨГЧИЙН УУРХАЙ</div>
+                <div class="dash-row">
+                    <div class="stat">NPV: <span id="op-wallet">$0k</span></div>
+                    <div class="stat">Хугацаа: <span id="op-clock">Жил 0</span></div>
+                    <div class="stat">Хүчин чадал: <span id="op-throughput">0 / 24</span></div>
+                    <div class="stat">Дискаунт: <span id="op-df">1.000</span></div>
+                </div>
+                <div class="grid" id="op-grid"></div>
+            </div>
+        </div>
 
-    <div class="instructions">
-        <strong>Заавар:</strong>
-        <ul>
-            <li><strong>Үндсэн зарчим:</strong> Уурхай тогтмол хүчин чадлаар ажиллана. Уурхай <strong>24 блок олборлосноор нэг жил өнгөрнө</strong>. Жил шинээр гарах бүрд олборлолтод өртөөгүй байгаа хүдрийн блокуудын үнэ цэнэ 8%-иар хорогдоно.</li>
-            <li><strong>Оновчлолын даалгавар:</strong> Та жилд 24 блок л олборлоно. Эхний жилүүдэд ядуу хүдэр олборлох тусам олборлолтод өртөхөө хүлээж буй баян блокуудын өнөөгийн үнэ цэнэ унана (NPV). </li>
-            <li><strong>Амжилтад хөтлөх стратеги:</strong> Жилд олборлох 24 блокоо зөв сонго. Ордын гүнд орших баян агуулгатай блокуудыг аль болох эрт олборлохын тулд шаардлагагүй хөрс хуулалт хийхээс зайлсхий. Олборлолтын эхний жилүүдийн мөнгөн урсгалаа аль болох өндөр байлгахыг зорь.</li>
-        </ul>
+        <div class="action-bar">
+            <button class="btn-green" id="finalize-btn" onclick="triggerFinalize()" disabled>Уурхайг хаах 📐</button>
+            <button class="btn-blue" id="host-restart-btn" onclick="triggerHostRestart()" style="display:none;">Шинэ тоглоом эхлүүлэх 🔄</button>
+        </div>
+
+        <div class="instructions">
+            <strong>Тэмцээний дүрэм:</strong>
+            <ul>
+                <li><strong>Жилийн хүчин чадал (24 блок):</strong> Та жилд хамгийн ихдээ 24 блок ухах боломжтой. 24 блок ухах бүрд жил ахиж, олборлоогүй үлдсэн хүдрийн үнэ цэнэ 8%-иар буурна (Discounting).</li>
+                <li><strong>Уурхайг хаах:</strong> Бүх баян хүдрээ аваад дууссан бол 📐 Хаах товчийг дарж олборлолтыг зогсооно. Хоёр тоглогч хоёулаа уурхайгаа хаах эсвэл блокны лимит дуусах үед тэмцээн өндөрлөнө.</li>
+                <li><strong>Дахин тоглох:</strong> Тоглоом дууссаны дараа зөвхөн Өрөө үүсгэгч (Host) тоглоомыг шинээр эхлүүлэх эрхтэй бөгөөд дарахад хоёр тоглогч ижил шинэ ордод шууд уралдана.</li>
+            </ul>
+        </div>
     </div>
 
     <script>
         const ROWS = 12;
         const COLS = 20;
         const DISCOUNT_RATE = 0.08;
-        const BLOCKS_PER_YEAR = 24; // Шинэчлэгдсэн: Жилд 24 блок ухна
-        
-        let wallet = 0;
-        let currentYear = 0;
-        let blocksMinedThisYear = 0;
-        let totalBlocksMined = 0;
-        let gameState = [];
-        let targetMaxNPV = 0;
-        let theoreticalOptimalSequence = []; 
-        let isFinalized = false;
+        const BLOCKS_PER_YEAR = 24; // ШИНИЙГ СУУЛГАСАН: Жилд 24 блок
 
-        function initGame() {
-            wallet = 0;
-            currentYear = 0;
-            blocksMinedThisYear = 0;
-            totalBlocksMined = 0;
-            isFinalized = false;
-            gameState = [];
+        // MQTT Сүлжээний тохиргоо
+        let mqttClient;
+        const BROKER = "broker.hivemq.com";
+        const PORT = 8000; 
+        let baseTopic = "";
+        let myRole = ""; // "host" эсвэл "guest"
+        let isConnectedToPeer = false;
+
+        // Тоглоомын дотоод төлөвүүд
+        let seedGridData = []; 
+        let targetMaxNPV = 0;
+        let theoreticalOptimalSequence = [];
+
+        // Тоглогчдын хувийн дата
+        let pMe = { wallet: 0, year: 0, minedThisYear: 0, totalMined: 0, finalized: false, grid: [] };
+        let pOp = { wallet: 0, year: 0, minedThisYear: 0, totalMined: 0, finalized: false, grid: [] };
+
+        // Идэвхтэй төлөв
+        let gameActive = false;
+
+        // MQTT Холболт үүсгэх
+        function connectMQTT() {
+            const clientID = "pit_arena_" + Math.random().toString(16).substr(2, 8);
+            mqttClient = new Paho.MQTT.Client(BROKER, Number(PORT), clientID);
+            mqttClient.onConnectionLost = (res) => { console.log("Lost:", res); };
+            mqttClient.onMessageArrived = handleIncomingMessage;
+
+            mqttClient.connect({
+                onSuccess: () => {
+                    document.getElementById('lobby-status').innerText = "Серверт холбогдлоо. Өрөө үүсгэх эсвэл код оруулж нэгдэнэ үү.";
+                    document.getElementById('lobby-controls').style.display = "block";
+                },
+                onFailure: (err) => {
+                    document.getElementById('lobby-status').innerText = "Холболт амжилтгүй. Хуудсыг сэргээнэ үү.";
+                    console.log(err);
+                },
+                useSSL: false
+            });
+        }
+
+        // Host өрөө үүсгэх
+        function startAsHost() {
+            myRole = "host";
+            const roomCode = Math.floor(100000 + Math.random() * 900000).toString();
+            baseTopic = "mining/pit_arena/room/" + roomCode;
             
-            document.getElementById('wallet').innerText = "$0k";
-            document.getElementById('wallet').style.color = "#4caf50";
-            document.getElementById('clock').innerText = "Жил 0";
-            document.getElementById('throughput').innerText = `0 / ${BLOCKS_PER_YEAR} блок`;
-            document.getElementById('discount-display').innerText = "1.000";
-            document.getElementById('message-box').innerText = "";
-            document.getElementById('finalize-btn').disabled = false;
-            document.getElementById('finalize-btn').style.opacity = "1";
+            mqttClient.subscribe(baseTopic);
             
-            // 1. Initialize base grid with standard waste (-25k value)
+            document.getElementById('lobby-panel').innerHTML = `
+                <h3 style="color:#ffca28;">ӨРӨӨ ҮҮСЛЭЭ</h3>
+                <div style="font-size:2em; font-weight:bold; margin:15px 0; color:#1e88e5; letter-spacing:3px;">${roomCode}</div>
+                <p style="color:#aaa;">Өрсөлдөгчдөө энэ кодыг өгч, холбогдохыг хүлээж байна...</p>
+                <div style="font-size:2.5em; animation: blink 1s infinite;">⏳</div>
+            `;
+            
+            generateSharedDeposit(); 
+        }
+
+        // Guest өрөөнд нэгдэх
+        function joinAsGuest() {
+            const code = document.getElementById('room-input').value.trim();
+            if(code.length !== 6) { alert("6 оронтой код оруулна уу!"); return; }
+            
+            myRole = "guest";
+            baseTopic = "mining/pit_arena/room/" + code;
+            
+            mqttClient.subscribe(baseTopic);
+            
+            document.getElementById('lobby-panel').innerText = "Өрөөнд холбогдож байна, түр хүлээнэ үү...";
+            
+            sendNetMessage({ type: "GUEST_JOIN" });
+        }
+
+        // Сүлжээгээр мессеж илгээх
+        function sendNetMessage(obj) {
+            if(!mqttClient || !baseTopic) return;
+            obj.sender = myRole;
+            const msg = new Paho.MQTT.Message(JSON.stringify(obj));
+            msg.destinationName = baseTopic;
+            mqttClient.send(msg);
+        }
+
+        // Сүлжээнээс ирсэн мессежийг боловсруулах
+        function handleIncomingMessage(message) {
+            const data = JSON.parse(message.payloadString);
+            if(data.sender === myRole && data.type !== "RESTART") return; // Өөрийн илгээсэн мессежийг алгасах (RESTART-аас бусад)
+
+            switch(data.type) {
+                case "GUEST_JOIN":
+                    if(myRole === "host") {
+                        isConnectedToPeer = true;
+                        sendNetMessage({ type: "MAP_DATA", grid: seedGridData });
+                        launchGameSession();
+                    }
+                    break;
+                case "MAP_DATA":
+                    if(myRole === "guest") {
+                        seedGridData = data.grid;
+                        isConnectedToPeer = true;
+                        launchGameSession();
+                    }
+                    break;
+                case "MINE_ACTION":
+                    if(gameActive) {
+                        applyPeerMining(data.row, data.col);
+                    }
+                    break;
+                case "FINALIZE_ACTION":
+                    pOp.finalized = true;
+                    document.getElementById('op-title').innerText = "ӨРСӨЛДӨГЧИЙН УУРХАЙ (ХААГДСАН 📐)";
+                    checkMatchEndCondition();
+                    break;
+                case "RESTART":
+                    // ШИНИЙГ СУУЛГАСАН: Сүлжээнээс дахин эхлүүлэх команд ирэхэд
+                    seedGridData = data.grid;
+                    resetLocalGameState();
+                    break;
+            }
+        }
+
+        // Ижил орд газрын бүтцийг санамсаргүй үүсгэх (Зөвхөн Host үүсгэж дамжуулна)
+        function generateSharedDeposit() {
+            seedGridData = [];
             for (let r = 0; r < ROWS; r++) {
-                gameState[r] = [];
+                seedGridData[r] = [];
                 for (let c = 0; c < COLS; c++) {
-                    gameState[r][c] = {
-                        type: 'W',
-                        baseValue: -25,
-                        currentValue: -25,
-                        mined: false
-                    };
+                    seedGridData[r][c] = { type: 'W', baseValue: -25 };
                 }
             }
 
-            // 2. Generate High-Grade Core (Exactly 16 connected blocks)
             let hgCluster = [];
-            let startRow = Math.floor(Math.random() * 3) + 6; // Deep placement (Rows 6-9)
+            let startRow = Math.floor(Math.random() * 3) + 6; 
             let startCol = Math.floor(Math.random() * 8) + 6; 
-            
-            gameState[startRow][startCol].type = 'HG';
-            gameState[startRow][startCol].baseValue = 170;
-            gameState[startRow][startCol].currentValue = 170;
+            seedGridData[startRow][startCol] = { type: 'HG', baseValue: 170 };
             hgCluster.push({r: startRow, c: startCol});
 
             while (hgCluster.length < 16) {
                 let baseBlock = hgCluster[Math.floor(Math.random() * hgCluster.length)];
-                let directions = [[-1, 0], [1, 0], [0, -1], [0, 1]]; 
-                let dir = directions[Math.floor(Math.random() * directions.length)];
-                let newR = baseBlock.r + dir[0];
-                let newC = baseBlock.c + dir[1];
-
-                if (newR > 2 && newR < ROWS && newC >= 0 && newC < COLS) {
-                    if (gameState[newR][newC].type === 'W') {
-                        gameState[newR][newC].type = 'HG';
-                        gameState[newR][newC].baseValue = 170;
-                        gameState[newR][newC].currentValue = 170;
-                        hgCluster.push({r: newR, c: newC});
+                let dir = [[-1, 0], [1, 0], [0, -1], [0, 1]][Math.floor(Math.random() * 4)];
+                let nR = baseBlock.r + dir[0], nC = baseBlock.c + dir[1];
+                if (nR > 2 && nR < ROWS && nC >= 0 && nC < COLS) {
+                    if (seedGridData[nR][nC].type === 'W') {
+                        seedGridData[nR][nC] = { type: 'HG', baseValue: 170 };
+                        hgCluster.push({r: nR, c: nC});
                     }
                 }
             }
 
-            // 3. Generate surrounding/buffer Low-Grade Halos (14 blocks scattered middle layer)
-            let lgTargetCount = 14;
-            let addedLg = 0;
-            while (addedLg < lgTargetCount) {
-                let r = Math.floor(Math.random() * 5) + 2; // Mid benches (Rows 2-6)
-                let c = Math.floor(Math.random() * COLS);
-
-                if (gameState[r][c].type === 'W') {
-                    gameState[r][c].type = 'LG';
-                    gameState[r][c].baseValue = 55;
-                    gameState[r][c].currentValue = 55;
+            let lgTarget = 14, addedLg = 0;
+            while (addedLg < lgTarget) {
+                let r = Math.floor(Math.random() * 5) + 2, c = Math.floor(Math.random() * COLS);
+                if (seedGridData[r][c].type === 'W') {
+                    seedGridData[r][c] = { type: 'LG', baseValue: 55 };
                     addedLg++;
                 }
             }
-
-            // 4. Run background block sequence optimizer to find maximum target NPV
-            calculateTheoreticalMaxNPV();
-
-            // 5. Render Grid UI
-            renderGrid();
         }
 
-        function renderGrid() {
-            const gridEl = document.getElementById('mine-grid');
-            gridEl.innerHTML = '';
+        // Тэмцээн эхлүүлэх үндсэн тохиргоо
+        function launchGameSession() {
+            document.getElementById('lobby-panel').style.display = "none";
+            document.getElementById('game-layout').style.display = "flex";
+            
+            document.getElementById('my-title').innerText = `ТАНЫ УУРХАЙ (${myRole === 'host' ? 'Host' : 'Guest'})`;
+            document.getElementById('broadcast-msg').innerText = "⚔️ ТЭМЦЭЭН ЭХЭЛЛЭЭ! Амжилт хүсэе!";
+            document.getElementById('finalize-btn').disabled = false;
+            
+            calculateTheoreticalMaxNPV();
+            setupLocalPlayers();
+            gameActive = true;
+        }
 
+        function setupLocalPlayers() {
+            // Миний талбар
+            pMe.grid = [];
+            for(let r=0; r<ROWS; r++){
+                pMe.grid[r] = [];
+                for(let c=0; c<COLS; c++){
+                    pMe.grid[r][c] = { ...seedGridData[r][c], currentValue: seedGridData[r][c].baseValue, mined: false };
+                }
+            }
+            // Өрсөлдөгчийн талбар
+            pOp.grid = [];
+            for(let r=0; r<ROWS; r++){
+                pOp.grid[r] = [];
+                for(let c=0; c<COLS; c++){
+                    pOp.grid[r][c] = { ...seedGridData[r][c], currentValue: seedGridData[r][c].baseValue, mined: false };
+                }
+            }
+
+            renderGridUI('my-grid', pMe.grid, true);
+            renderGridUI('op-grid', pOp.grid, false);
+        }
+
+        function renderGridUI(htmlId, gridData, isInteractive) {
+            const container = document.getElementById(htmlId);
+            container.innerHTML = '';
             for (let r = 0; r < ROWS; r++) {
                 for (let c = 0; c < COLS; c++) {
-                    const block = gameState[r][c];
-                    const blockEl = document.createElement('div');
-                    blockEl.id = `b-${r}-${c}`;
+                    const block = gridData[r][c];
+                    const el = document.createElement('div');
+                    el.id = `${htmlId}-${r}-${c}`;
                     
-                    let typeClass = 'waste';
-                    if (block.type === 'HG') typeClass = 'ore-hg';
-                    if (block.type === 'LG') typeClass = 'ore-lg';
+                    let cls = 'waste';
+                    if (block.type === 'HG') cls = 'ore-hg';
+                    if (block.type === 'LG') cls = 'ore-lg';
+                    el.className = `block ${cls}`;
                     
-                    blockEl.className = `block ${typeClass}`;
-                    if (block.mined) blockEl.classList.add('mined');
+                    if (block.mined) el.classList.add('mined');
 
-                    let displayVal = block.currentValue > 0 
-                        ? `+${Math.round(block.currentValue)}k` 
-                        : `${Math.round(block.currentValue)}k`;
-
-                    blockEl.innerHTML = `
-                        <div class="type">${block.type}</div>
-                        <div class="val">${displayVal}</div>
-                    `;
+                    let valText = block.currentValue > 0 ? `+${Math.round(block.currentValue)}` : `${Math.round(block.currentValue)}`;
+                    el.innerHTML = `<div>${block.type}</div><div style="font-size:0.8em; opacity:0.8;">${valText}</div>`;
                     
-                    blockEl.addEventListener('click', () => mineBlock(r, c));
-                    gridEl.appendChild(blockEl);
+                    if (isInteractive) {
+                        el.addEventListener('click', () => handleMineClick(r, c));
+                    }
+                    container.appendChild(el);
                 }
             }
         }
 
-        function mineBlock(r, c) {
-            if (isFinalized) return;
-            const block = gameState[r][c];
-            const msgBox = document.getElementById('message-box');
-            msgBox.innerText = ""; 
-
+        // Блок ухах үндсэн логик
+        function handleMineClick(r, c) {
+            if (!gameActive || pMe.finalized) return;
+            let block = pMe.grid[r][c];
             if (block.mined) return;
 
-            // Enforce Geotechnical 45-degree slope pit wall constraint
+            // Налуугийн аюулгүй байдлын шалгалт
             if (r > 0) {
-                const parents = [c - 1, c, c + 1];
-                let blocked = false;
-
-                for (let p of parents) {
-                    if (p >= 0 && p < COLS) {
-                        if (!gameState[r - 1][p].mined) {
-                            blocked = true;
-                            const parentEl = document.getElementById(`b-${r-1}-${p}`);
-                            parentEl.style.transform = "scale(1.2)";
-                            parentEl.style.borderColor = "#ef5350";
-                            parentEl.style.zIndex = "10";
-                            setTimeout(() => {
-                                parentEl.style.transform = "scale(1)";
-                                parentEl.style.borderColor = getBlockBorderColor(r-1, p);
-                                parentEl.style.zIndex = "1";
-                            }, 250);
-                        }
+                for (let p of [c - 1, c, c + 1]) {
+                    if (p >= 0 && p < COLS && !pMe.grid[r - 1][p].mined) {
+                        document.getElementById('broadcast-msg').innerText = "🛑 НАЛУУГИЙН АЛДАА: Дээд талын блокуудыг эхэлж ухна уу!";
+                        return;
                     }
-                }
-
-                if (blocked) {
-                    msgBox.innerText = "🛑 SLOPE VIOLATION: Secure the safe upper benches first!";
-                    msgBox.style.color = "#ef5350";
-                    return;
                 }
             }
 
-            // Commit mining step
+            document.getElementById('broadcast-msg').innerText = "⛏️ Олборлож байна...";
+
             block.mined = true;
-            wallet += block.currentValue;
-            
-            blocksMinedThisYear++;
-            totalBlocksMined++;
+            pMe.wallet += block.currentValue;
+            pMe.minedThisYear++;
+            pMe.totalMined++;
 
-            // Check if block milestone capacity advances the annual cycle
-            if (blocksMinedThisYear === BLOCKS_PER_YEAR) {
-                currentYear++;
-                blocksMinedThisYear = 0;
-
-                // Advance compound time discounting on unmined blocks
-                let currentDiscountFactor = 1 / Math.pow(1 + DISCOUNT_RATE, currentYear);
-                
+            // Жил ахих цикл (24 Блок дуусахад)
+            if (pMe.minedThisYear === BLOCKS_PER_YEAR) {
+                pMe.year++;
+                pMe.minedThisYear = 0;
+                let df = 1 / Math.pow(1 + DISCOUNT_RATE, pMe.year);
                 for (let row = 0; row < ROWS; row++) {
                     for (let col = 0; col < COLS; col++) {
-                        if (!gameState[row][col].mined && gameState[row][col].type !== 'W') {
-                            gameState[row][col].currentValue = gameState[row][col].baseValue * currentDiscountFactor;
+                        if (!pMe.grid[row][col].mined && pMe.grid[row][col].type !== 'W') {
+                            pMe.grid[row][col].currentValue = pMe.grid[row][col].baseValue * df;
                         }
                     }
                 }
             }
 
-            // Update UI Dashboards
-            document.getElementById('wallet').innerText = (wallet >= 0 ? `$${Math.round(wallet)}k` : `-$${Math.abs(Math.round(wallet))}k`);
-            document.getElementById('wallet').style.color = wallet >= 0 ? "#4caf50" : "#ef5350";
-            document.getElementById('clock').innerText = `Жил ${currentYear}`;
-            document.getElementById('throughput').innerText = `${blocksMinedThisYear} / ${BLOCKS_PER_YEAR} блок`;
-            document.getElementById('discount-display').innerText = (1 / Math.pow(1 + DISCOUNT_RATE, currentYear)).toFixed(3);
+            // Шинэчлэгдсэн датаг дэлгэцэнд зурах
+            updateDashboardUI('my', pMe);
+            renderGridUI('my-grid', pMe.grid, true);
 
-            renderGrid();
+            // Өрсөлдөгч рүүгээ сүлжээгээр нүүдлээ илгээх
+            sendNetMessage({ type: "MINE_ACTION", row: r, col: c });
+
+            checkMatchEndCondition();
         }
 
-        function getBlockBorderColor(r, c) {
-            let t = gameState[r][c].type;
-            if (t === 'HG') return '#e65100';
-            if (t === 'LG') return '#512da8';
-            return '#4e342e';
+        // Өрсөлдөгчийн нүүдлийг хүлээж авч өөрийн дэлгэц дээр зурах
+        function applyPeerMining(r, c) {
+            let block = pOp.grid[r][c];
+            block.mined = true;
+            pOp.wallet += block.currentValue;
+            pOp.minedThisYear++;
+            pOp.totalMined++;
+
+            if (pOp.minedThisYear === BLOCKS_PER_YEAR) {
+                pOp.year++;
+                pOp.minedThisYear = 0;
+                let df = 1 / Math.pow(1 + DISCOUNT_RATE, pOp.year);
+                for (let row = 0; row < ROWS; row++) {
+                    for (let col = 0; col < COLS; col++) {
+                        if (!pOp.grid[row][col].mined && pOp.grid[row][col].type !== 'W') {
+                            pOp.grid[row][col].currentValue = pOp.grid[row][col].baseValue * df;
+                        }
+                    }
+                }
+            }
+
+            updateDashboardUI('op', pOp);
+            renderGridUI('op-grid', pOp.grid, false);
+
+            checkMatchEndCondition();
         }
 
-        // --- BACKGROUND NPV CLOSURE OPTIMIZER ENGINE ---
+        function updateDashboardUI(prefix, playerObj) {
+            document.getElementById(`${prefix}-wallet`).innerText = `$${Math.round(playerObj.wallet)}k`;
+            document.getElementById(`${prefix}-wallet`).style.color = playerObj.wallet >= 0 ? "#4caf50" : "#ef5350";
+            document.getElementById(`${prefix}-clock`).innerText = `Жил ${playerObj.year}`;
+            document.getElementById(`${prefix}-throughput`).innerText = `${playerObj.minedThisYear} / ${BLOCKS_PER_YEAR}`;
+            document.getElementById(`${prefix}-df`).innerText = (1 / Math.pow(1 + DISCOUNT_RATE, playerObj.year)).toFixed(3);
+        }
+
+        // Уурхайг гараар хаах
+        function triggerFinalize() {
+            if(pMe.finalized) return;
+            pMe.finalized = true;
+            document.getElementById('finalize-btn').disabled = true;
+            document.getElementById('my-title').innerText = "ТАНЫ УУРХАЙ (ХААГДСАН 📐)";
+            
+            sendNetMessage({ type: "FINALIZE_ACTION" });
+            checkMatchEndCondition();
+        }
+
+        // Тэмцээн дууссан эсэхийг шалгах
+        function checkMatchEndCondition() {
+            // Эсвэл хоёулаа гараар хаасан, эсвэл бүх блок ухагдсан үед дуусна
+            let allMeMined = pMe.totalMined >= (ROWS * COLS);
+            let allOpMined = pOp.totalMined >= (ROWS * COLS);
+
+            if ((pMe.finalized || allMeMined) && (pOp.finalized || allOpMined)) {
+                executeMatchEvaluation();
+            }
+        }
+
+        // Үр дүнг нэгтгэн дүгнэх
+        function executeMatchEvaluation() {
+            gameActive = false;
+            const msgEl = document.getElementById('broadcast-msg');
+
+            // Оновчтой замын индикатор тэмдэглэгээг зурах
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const blockEl = document.getElementById(`my-grid-${r}-${c}`);
+                    if (!blockEl) continue;
+                    const studentMined = pMe.grid[r][c].mined;
+                    const optimalMined = theoreticalOptimalSequence[r][c];
+
+                    if (optimalMined && !studentMined) {
+                        blockEl.classList.add('should-have-mined');
+                    } else if (!optimalMined && studentMined) {
+                        blockEl.classList.add('incorrectly-mined');
+                    }
+                }
+            }
+
+            let myEff = targetMaxNPV > 0 ? Math.round((pMe.wallet / targetMaxNPV) * 100) : 0;
+            let opEff = targetMaxNPV > 0 ? Math.round((pOp.wallet / targetMaxNPV) * 100) : 0;
+
+            let resultStatus = "";
+            if (pMe.wallet > pOp.wallet) {
+                resultStatus = `🏆 ТА ЯЛЛАА! (Таны үр ашиг: ${myEff}%, Өрсөлдөгч: ${opEff}%)`;
+                msgEl.style.color = "#66bb6a";
+            } else if (pMe.wallet < pOp.wallet) {
+                resultStatus = `❌ ӨРСӨЛДӨГЧ ЯЛЛАА! (Таны үр ашиг: ${myEff}%, Өрсөлдөгч: ${opEff}%)`;
+                msgEl.style.color = "#ef5350";
+            } else {
+                resultStatus = `🤝 ТЭНЦЛЭЭ! Хоёр тоглогчийн NPV яг ижил гарлаа. (Үр ашиг: ${myEff}%)`;
+                msgEl.style.color = "#ffb74d";
+            }
+
+            msgEl.innerText = `${resultStatus} | Зорилтот макс NPV байсан: $${targetMaxNPV}k`;
+
+            // ШИНЭЧЛЭЛТ: Тоглоом дуусахад зөвхөн Host-д дахин эхлүүлэх товчийг харуулах
+            if (myRole === "host") {
+                document.getElementById('host-restart-btn').style.display = "inline-block";
+            } else {
+                msgEl.innerText += " [Host шинэ тоглоом эхлүүлэхийг хүлээнэ үү]";
+            }
+        }
+
+        // ШИНЭ ФУНКЦ: Host дахин эхлүүлэх товч дарах үед
+        function triggerHostRestart() {
+            if (myRole !== "host") return;
+            generateSharedDeposit(); // Шинэ санамсаргүй орд газрын бүтэц үүсгэх
+            sendNetMessage({ type: "RESTART", grid: seedGridData }); // Сүлжээгээр шинэ газрын зургийг илгээх
+            resetLocalGameState(); // Өөрийн талын тоглоомыг шинэчлэх
+        }
+
+        // ШИНЭ ФУНКЦ: Хоёр талын тоглоомын төлөвийг бүрэн цэвэрлэж дахин эхлүүлэх
+        function resetLocalGameState() {
+            pMe = { wallet: 0, year: 0, minedThisYear: 0, totalMined: 0, finalized: false, grid: [] };
+            pOp = { wallet: 0, year: 0, minedThisYear: 0, totalMined: 0, finalized: false, grid: [] };
+            
+            document.getElementById('my-title').innerText = `ТАНЫ УУРХАЙ (${myRole === 'host' ? 'Host' : 'Guest'})`;
+            document.getElementById('op-title').innerText = "ӨРСӨЛДӨГЧИЙН УУРХАЙ";
+            document.getElementById('broadcast-msg').innerText = "🔄 ШИНЭ ТОГЛООМ ЭХЭЛЛЭЭ! (Ижил шинэ орд үүслээ)";
+            document.getElementById('broadcast-msg').style.color = "#ffb74d";
+            document.getElementById('finalize-btn').disabled = false;
+            document.getElementById('host-restart-btn').style.display = "none";
+
+            updateDashboardUI('my', pMe);
+            updateDashboardUI('op', pOp);
+            
+            calculateTheoreticalMaxNPV();
+            setupLocalPlayers();
+            gameActive = true;
+        }
+
+        // Лерч-Гроссман дээр суурилсан Макс NPV тооцоологч алгоритм
         function calculateTheoreticalMaxNPV() {
             let simGrid = [];
             for (let r = 0; r < ROWS; r++) {
                 simGrid[r] = [];
                 for (let c = 0; c < COLS; c++) {
-                    simGrid[r][c] = { r: r, c: c, type: gameState[r][c].type, baseValue: gameState[r][c].baseValue, mined: false };
+                    simGrid[r][c] = { r: r, c: c, type: seedGridData[r][c].type, baseValue: seedGridData[r][c].baseValue, mined: false };
                 }
             }
 
-            let simWallet = 0;
-            let simTotalMined = 0;
+            let simWallet = 0, simTotalMined = 0;
 
             while (true) {
-                let bestCone = null;
-                let bestConeValue = -Infinity;
+                let bestCone = null, bestConeValue = -Infinity;
                 let currentYearSim = Math.floor(simTotalMined / BLOCKS_PER_YEAR);
                 let currentDF = 1 / Math.pow(1 + DISCOUNT_RATE, currentYearSim);
 
@@ -434,36 +675,23 @@
                         if (!simGrid[r][c].mined && simGrid[r][c].type === 'HG') {
                             let cone = [];
                             getSimCone(r, c, simGrid, cone);
-                            
                             let val = 0;
-                            for (let b of cone) {
-                                val += b.type === 'W' ? -25 : b.baseValue * currentDF;
-                            }
-
-                            if (val > bestConeValue) {
-                                bestConeValue = val;
-                                bestCone = cone;
-                            }
+                            for (let b of cone) { val += b.type === 'W' ? -25 : b.baseValue * currentDF; }
+                            if (val > bestConeValue) { bestConeValue = val; bestCone = cone; }
                         }
                     }
                 }
 
                 if (!bestCone || bestConeValue <= 0) {
-                    bestCone = null;
-                    bestConeValue = -Infinity;
+                    bestCone = null; bestConeValue = -Infinity;
                     for (let r = 0; r < ROWS; r++) {
                         for (let c = 0; c < COLS; c++) {
                             if (!simGrid[r][c].mined && simGrid[r][c].type === 'LG') {
                                 let cone = [];
                                 getSimCone(r, c, simGrid, cone);
                                 let val = 0;
-                                for (let b of cone) {
-                                    val += b.type === 'W' ? -25 : b.baseValue * currentDF;
-                                }
-                                if (val > bestConeValue) {
-                                    bestConeValue = val;
-                                    bestCone = cone;
-                                }
+                                for (let b of cone) { val += b.type === 'W' ? -25 : b.baseValue * currentDF; }
+                                if (val > bestConeValue) { bestConeValue = val; bestCone = cone; }
                             }
                         }
                     }
@@ -477,78 +705,25 @@
                         simWallet += b.type === 'W' ? -25 : b.baseValue * loopDF;
                         simTotalMined++;
                     }
-                } else {
-                    break;
-                }
+                } else { break; }
             }
-
-            targetMaxNPV = simWallet > 0 ? Math.round(simWallet) : 100;
-            document.getElementById('max-npv').innerText = `$${targetMaxNPV}k`;
+            targetMaxNPV = simWallet > 0 ? Math.round(simWallet) : 500;
             theoreticalOptimalSequence = simGrid.map(row => row.map(b => b.mined));
         }
 
         function getSimCone(r, c, simGrid, cone) {
             if (cone.some(b => b.r === r && b.c === c)) return;
-            cone.push({r: r, c: c, type: simGrid[r][c].type, baseValue: simGrid[r][c].baseValue});
-
+            cone.push({ r: r, c: c, type: simGrid[r][c].type, baseValue: simGrid[r][c].baseValue });
             if (r > 0) {
-                let parents = [c - 1, c, c + 1];
-                for (let p of parents) {
+                for (let p of [c - 1, c, c + 1]) {
                     if (p >= 0 && p < COLS) {
-                        if (!simGrid[r - 1][p].mined) {
-                            getSimCone(r - 1, p, simGrid, cone);
-                        }
+                        if (!simGrid[r - 1][p].mined) { getSimCone(r - 1, p, simGrid, cone); }
                     }
                 }
             }
         }
 
-        // --- FINAL EVALUATION METHODS ---
-        function finalizePit() {
-            if (isFinalized) return;
-            isFinalized = true;
-            document.getElementById('finalize-btn').disabled = true;
-            document.getElementById('finalize-btn').style.opacity = "0.5";
-
-            const msgBox = document.getElementById('message-box');
-            let efficiency = targetMaxNPV > 0 ? Math.round((wallet / targetMaxNPV) * 100) : 0;
-            if (efficiency < 0) efficiency = 0;
-            if (efficiency > 100) efficiency = 100;
-
-            for (let r = 0; r < ROWS; r++) {
-                for (let c = 0; c < COLS; c++) {
-                    const blockEl = document.getElementById(`b-${r}-${c}`);
-                    const studentMined = gameState[r][c].mined;
-                    const optimalMined = theoreticalOptimalSequence[r][c];
-
-                    if (optimalMined && !studentMined) {
-                        blockEl.classList.add('should-have-mined');
-                    } else if (!optimalMined && studentMined) {
-                        blockEl.classList.add('incorrectly-mined');
-                    }
-                }
-            }
-
-            if (efficiency >= 90) {
-                msgBox.innerText = `🏆 LANE'S CHAMPION! Efficiency: ${efficiency}%. Төлөвлөлтийг хангалттай сайн хийлээ!`;
-                msgBox.style.color = "#66bb6a";
-            } else if (efficiency >= 70) {
-                msgBox.innerText = `👍 DECENT SEQUENCE. Efficiency: ${efficiency}%. Эхний жилүүдэд ядуу хүдэр дээр төвлөрснөөр баян агуулгатай хүдэр олборлолт цөөн жилээр хойшилсон байна.`;
-                msgBox.style.color = "#81c784";
-            } else if (efficiency >= 45) {
-                msgBox.innerText = `⚠️ PRODUCTION DELAY. Efficiency: ${efficiency}%. Дискаунтын улмаас гүнд буй баян хүдрийн үнэ цэнэ унасан байна.`;
-                msgBox.style.color = "#ffb74d";
-            } else {
-                msgBox.innerText = `🛑 ASSET DEPRECIATION. Efficiency: ${efficiency}%. Цаг хугацааны явцад нөөцийн үнэ цэнэ бүрэн алдагдлаа.`;
-                msgBox.style.color = "#e57373";
-            }
-        }
-
-        function resetGame() {
-            initGame();
-        }
-
-        window.onload = initGame;
+        window.onload = connectMQTT;
     </script>
 </body>
 </html>
